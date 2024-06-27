@@ -1,0 +1,14 @@
+{
+  "Projection": {
+    "ClippingRange": {
+      "Max": 4,
+      "Min": 12
+    },
+    "IsEnabled": true,
+    "ParallelScale": 10
+  },
+  "Actor": {
+    "Color": "LightSteelBlue",
+    "Opacity":  100
+  }
+}
