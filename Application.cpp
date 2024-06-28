@@ -10,6 +10,7 @@ Application::Application(std::string filename)
     colors->SetColor("ParaViewBkg", bkg.data());
 
     renderer->SetBackground(colors->GetColor3d("ParaViewBkg").GetData());
+
     renderWindow->SetSize(1280, 800);
     renderWindow->SetWindowName("Vtk Project");
     renderWindow->AddRenderer(renderer);
@@ -42,6 +43,7 @@ Application::Application(std::string filename)
 
     renderer->AddActor(actor);
 
+    renderWindow->OffScreenRenderingOff();
     renderWindow->Render();
     renderWindowInteractor->Start();
 }
@@ -121,6 +123,8 @@ void Application::ChangeParallelProjection()
     auto camera = renderer->GetActiveCamera();
     bool flag = camera->GetParallelProjection();
     camera->SetParallelProjection(!flag);
+    
+    renderWindow->Render();
 }
 
 void Application::PrintClippingRange()
@@ -134,6 +138,8 @@ void Application::ChangeClippingRangeMode()
     auto style = (vtkInteractorStyle *)(renderWindowInteractor->GetInteractorStyle());
     bool flag = style->GetAutoAdjustCameraClippingRange();
     style->SetAutoAdjustCameraClippingRange(!flag);
+
+    renderWindow->Render();
 }
 
 void Application::ChangeColorMode()
