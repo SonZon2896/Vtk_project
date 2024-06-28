@@ -1,10 +1,15 @@
 #include "Application.h"
 
+//#define WATCH_RENDER_TIME
+
 Application::Application(std::string filename)
 {
     pathToSettings = filename;
     UpdateJson();
+}
 
+void Application::Start()
+{
     std::array<unsigned char, 4> bkg{ 82, 87, 110, 255 };
     vtkNew<vtkNamedColors> colors;
     colors->SetColor("ParaViewBkg", bkg.data());
@@ -43,9 +48,143 @@ Application::Application(std::string filename)
 
     renderer->AddActor(actor);
 
-    renderWindow->OffScreenRenderingOff();
+#ifdef WATCH_RENDER_TIME
+    std::chrono::high_resolution_clock timer;
+    auto start = timer.now();
+    renderWindow->Render();
+    auto result = timer.now() - start;
+    std::cout << "Default Rendering time: " << std::chrono::duration_cast<std::chrono::milliseconds>(result).count() << std::endl;
+
+    SaveScreen("DefaultRender.jpg");
+#else
     renderWindow->Render();
     renderWindowInteractor->Start();
+#endif
+}
+
+void Application::OffScreenRendering()
+{
+    std::array<unsigned char, 4> bkg{ 82, 87, 110, 255 };
+    vtkNew<vtkNamedColors> colors;
+    colors->SetColor("ParaViewBkg", bkg.data());
+
+    renderer->SetBackground(colors->GetColor3d("ParaViewBkg").GetData());
+
+    renderWindow->SetSize(1280, 800);
+    renderWindow->SetWindowName("Vtk Project");
+    renderWindow->AddRenderer(renderer);
+    renderWindowInteractor->SetRenderWindow(renderWindow);
+
+    auto style = GetStyle();
+    renderWindowInteractor->SetInteractorStyle(style);
+
+    vtkNew<vtkCylinderSource> cylinder;
+    cylinder->SetResolution(8);
+    //cylinder->SetDirection(0, 1, 0);
+    cylinder->SetHeight(20);
+    cylinder->Update();
+
+    auto bounds = cylinder->GetOutput()->GetBounds();
+
+    vtkNew<vtkElevationFilter> elevation_filter;
+    elevation_filter->SetLowPoint(0, bounds[2], 0);
+    elevation_filter->SetHighPoint(0, bounds[3], 0);
+    elevation_filter->SetInputConnection(cylinder->GetOutputPort());
+
+    auto ctf = GetColorTable();
+
+    mapper->SetInputConnection(elevation_filter->GetOutputPort());
+    mapper->SetLookupTable(ctf);
+    mapper->SetColorModeToMapScalars();
+    mapper->InterpolateScalarsBeforeMappingOn();
+
+    actor->SetMapper(mapper);
+
+    renderer->AddActor(actor);
+
+    renderWindow->OffScreenRenderingOn();
+#ifdef WATCH_RENDER_TIME
+    std::chrono::high_resolution_clock timer;
+    auto start = timer.now();
+    renderWindow->Render();
+    auto result = timer.now() - start;
+    std::cout << "Off Screen Rendering time: " << std::chrono::duration_cast<std::chrono::milliseconds>(result).count() << std::endl;
+
+    SaveScreen("Off Screen Render.jpg");
+#else
+    renderWindow->Render();
+#endif
+}
+
+void Application::SaveScreen(std::string fileName)
+{
+    bool rgba = true;
+    if (!fileName.empty())
+    {
+        std::string fn = fileName;
+        std::string ext;
+        auto found = fn.find_last_of(".");
+        if (found == std::string::npos)
+        {
+            ext = ".png";
+            fn += ext;
+        }
+        else
+        {
+            ext = fileName.substr(found, fileName.size());
+        }
+        auto writer = vtkSmartPointer<vtkImageWriter>::New();
+        if (ext == ".bmp")
+        {
+            writer = vtkSmartPointer<vtkBMPWriter>::New();
+        }
+        else if (ext == ".jpg")
+        {
+            writer = vtkSmartPointer<vtkJPEGWriter>::New();
+        }
+        else if (ext == ".pnm")
+        {
+            writer = vtkSmartPointer<vtkPNMWriter>::New();
+        }
+        else if (ext == ".ps")
+        {
+            if (rgba)
+            {
+                rgba = false;
+            }
+            writer = vtkSmartPointer<vtkPostScriptWriter>::New();
+        }
+        else if (ext == ".tiff")
+        {
+            writer = vtkSmartPointer<vtkTIFFWriter>::New();
+        }
+        else
+        {
+            writer = vtkSmartPointer<vtkPNGWriter>::New();
+        }
+        vtkNew<vtkWindowToImageFilter> window_to_image_filter;
+        window_to_image_filter->SetInput(renderWindow);
+        window_to_image_filter->SetScale(1); // image quality
+        if (rgba)
+        {
+            window_to_image_filter->SetInputBufferTypeToRGBA();
+        }
+        else
+        {
+            window_to_image_filter->SetInputBufferTypeToRGB();
+        }
+        // Read from the front buffer.
+        window_to_image_filter->ReadFrontBufferOff();
+        window_to_image_filter->Update();
+
+        writer->SetFileName(fn.c_str());
+        writer->SetInputConnection(window_to_image_filter->GetOutputPort());
+        writer->Write();
+    }
+    else
+    {
+        std::cerr << "No filename provided." << std::endl;
+    }
 }
 
 void Application::UpdateJson()

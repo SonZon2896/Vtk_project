@@ -18,6 +18,14 @@
 #include <vtkCylinderSource.h>
 #include <vtkConeSource.h>
 #include <vtkSphereSource.h>
+#include <vtkImageWriter.h>
+#include <vtkBMPWriter.h>
+#include <vtkJPEGWriter.h>
+#include <vtkPNMWriter.h>
+#include <vtkPostScriptWriter.h>
+#include <vtkTIFFWriter.h>
+#include <vtkPNGWriter.h>
+#include <vtkWindowToImageFilter.h>
 #include <vtknlohmann/json.hpp>
 #include <array>
 #include <string>
@@ -52,6 +60,11 @@ private:
 public:
 	Application() = delete;
 	Application(std::string PathToSettings);
+
+	void Start();
+	void OffScreenRendering();
+
+	void SaveScreen(std::string filename);
 
 	void UpdateSettings();
 	void ChangeParallelProjection();
