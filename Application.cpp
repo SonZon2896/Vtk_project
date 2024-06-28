@@ -8,6 +8,18 @@ Application::Application(std::string filename)
     UpdateJson();
 }
 
+void CallbackFunction(vtkObject* caller, long unsigned int vtkNotUsed(eventId),
+    void* vtkNotUsed(clientData), void* vtkNotUsed(callData))
+{
+    vtkRenderer* renderer = static_cast<vtkRenderer*>(caller);
+
+    double timeInSeconds = renderer->GetLastRenderTimeInSeconds();
+    double fps = 1.0 / timeInSeconds;
+    std::cout << "FPS: " << fps << std::endl;
+
+    std::cout << "Callback" << std::endl;
+}
+
 void Application::Start()
 {
     std::array<unsigned char, 4> bkg{ 82, 87, 110, 255 };
@@ -50,13 +62,21 @@ void Application::Start()
 
 #ifdef WATCH_RENDER_TIME
     std::chrono::high_resolution_clock timer;
-    auto start = timer.now();
-    renderWindow->Render();
-    auto result = timer.now() - start;
-    std::cout << "Default Rendering time: " << std::chrono::duration_cast<std::chrono::milliseconds>(result).count() << std::endl;
+    for (int i = 0; i < 10; ++i)
+    {
+        auto start = timer.now();
+        renderWindow->Render();
+        auto result = timer.now() - start;
+        std::cout << "Default Rendering time: " << std::chrono::duration_cast<std::chrono::milliseconds>(result).count() << std::endl;
+    }
+    std::cout << "Default GetRenderingBackEnd: " << renderWindow->GetRenderingBackend() << std::endl;
 
     SaveScreen("DefaultRender.jpg");
 #else
+    vtkNew<vtkCallbackCommand> callback;
+
+    callback->SetCallback(CallbackFunction);
+    renderer->AddObserver(vtkCommand::EndEvent, callback);
     renderWindow->Render();
     renderWindowInteractor->Start();
 #endif
@@ -105,10 +125,14 @@ void Application::OffScreenRendering()
     renderWindow->OffScreenRenderingOn();
 #ifdef WATCH_RENDER_TIME
     std::chrono::high_resolution_clock timer;
-    auto start = timer.now();
-    renderWindow->Render();
-    auto result = timer.now() - start;
-    std::cout << "Off Screen Rendering time: " << std::chrono::duration_cast<std::chrono::milliseconds>(result).count() << std::endl;
+    for (int i = 0; i < 10; ++i)
+    {
+        auto start = timer.now();
+        renderWindow->Render();
+        auto result = timer.now() - start;
+        std::cout << "Off Screen Rendering time: " << std::chrono::duration_cast<std::chrono::milliseconds>(result).count() << std::endl;
+    }
+    std::cout << "Off Screen GetRenderingBackEnd: " << renderWindow->GetRenderingBackend() << std::endl;
 
     SaveScreen("Off Screen Render.jpg");
 #else

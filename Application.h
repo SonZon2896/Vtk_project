@@ -26,6 +26,7 @@
 #include <vtkTIFFWriter.h>
 #include <vtkPNGWriter.h>
 #include <vtkWindowToImageFilter.h>
+#include <vtkCallbackCommand.h>
 #include <vtknlohmann/json.hpp>
 #include <array>
 #include <string>
@@ -55,8 +56,6 @@ private:
 	void UpdateJson();
 	vtkNew<KeyPressInteractorStyle>GetStyle();
 	vtkNew<vtkDiscretizableColorTransferFunction> GetColorTable();
-	
-
 public:
 	Application() = delete;
 	Application(std::string PathToSettings);
@@ -72,3 +71,6 @@ public:
 	void ChangeClippingRangeMode();
 	void ChangeColorMode();
 };
+
+void CallbackFunction(vtkObject* caller, long unsigned int vtkNotUsed(eventId),
+	void* vtkNotUsed(clientData), void* vtkNotUsed(callData));
