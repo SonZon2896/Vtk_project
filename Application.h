@@ -1,8 +1,13 @@
 #pragma once
 
 #include <vtkActor.h>
+#include <vtkActor2D.h>
 #include <vtkNamedColors.h>
 #include <vtkNew.h>
+#include <vtkSmartPointer.h>
+#include <vtkCellIterator.h>
+#include <vtkCellArrayIterator.h>
+#include <vtkTextProperty.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
 #include <vtkRenderWindow.h>
@@ -18,6 +23,9 @@
 #include <vtkCylinderSource.h>
 #include <vtkConeSource.h>
 #include <vtkSphereSource.h>
+#include <vtkPlaneSource.h>
+#include <vtkCubeSource.h>
+#include <vtkStripper.h>
 #include <vtkImageWriter.h>
 #include <vtkBMPWriter.h>
 #include <vtkJPEGWriter.h>
@@ -27,7 +35,14 @@
 #include <vtkPNGWriter.h>
 #include <vtkWindowToImageFilter.h>
 #include <vtkCallbackCommand.h>
+#include <vtkContourFilter.h>
+#include <vtkRandomSequence.h>
+#include <vtkMinimalStandardRandomSequence.h>
 #include <vtknlohmann/json.hpp>
+#include <vtkDoubleArray.h>
+#include <vtkPointData.h>
+#include <vtkLookupTable.h>
+#include <vtkLabeledDataMapper.h>
 #include <array>
 #include <string>
 #include <fstream>

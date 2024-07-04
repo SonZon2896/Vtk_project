@@ -5,13 +5,17 @@ project(VTK_Project)
 find_package(VTK COMPONENTS 
   CommonColor
   CommonCore
+  CommonDataModel
+  FiltersCore
   FiltersSources
+  IOXML
   IOGeometry
   InteractionStyle
   RenderingContextOpenGL2
   RenderingCore
   RenderingFreeType
   RenderingGL2PSOpenGL2
+  RenderingLabel
   RenderingOpenGL2
 )
 

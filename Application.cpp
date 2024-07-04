@@ -60,6 +60,109 @@ void Application::Start()
 
     renderer->AddActor(actor);
 
+    vtkSmartPointer<vtkPolyData> polyData;
+    vtkNew<vtkContourFilter> contours;
+
+    vtkNew<vtkMinimalStandardRandomSequence> randomSequence;
+    randomSequence->SetSeed(2);
+
+    vtkNew<vtkPlaneSource> plane;
+    plane->SetXResolution(5);
+    plane->SetYResolution(5);
+    plane->Update();
+
+    vtkNew<vtkDoubleArray> randomScalars;
+    randomScalars->SetNumberOfComponents(1);
+    randomScalars->SetName("Isovalues");
+    for (int i = 0; i < plane->GetOutput()->GetNumberOfPoints(); i++)
+    {
+        randomScalars->InsertNextTuple1(randomSequence->GetRangeValue(0., 1.));
+        randomSequence->Next();
+    }
+    plane->GetOutput()->GetPointData()->SetScalars(randomScalars);
+    polyData = plane->GetOutput();
+    contours->SetInputConnection(plane->GetOutputPort());
+    contours->GenerateValues(5, 0, 1);
+
+
+    vtkNew<vtkPolyDataMapper> surfaceMapper;
+    surfaceMapper->SetInputConnection(plane->GetOutputPort());
+    surfaceMapper->ScalarVisibilityOn();
+    surfaceMapper->SetLookupTable(ctf);
+    surfaceMapper->SetColorModeToMapScalars();
+    surfaceMapper->InterpolateScalarsBeforeMappingOn();
+
+    vtkNew<vtkActor> surface;
+    surface->SetMapper(surfaceMapper);
+    surface->SetPosition(5, 0, 0);
+    
+    // Connect the segments of the contours into polylines.
+    vtkNew<vtkStripper> contourStripper;
+    contourStripper->SetInputConnection(contours->GetOutputPort());
+    contourStripper->Update();
+
+    vtkNew<vtkPolyDataMapper> contourMapper;
+    contourMapper->SetInputConnection(contourStripper->GetOutputPort());
+    contourMapper->ScalarVisibilityOff();
+
+    vtkNew<vtkActor> isolines;
+    isolines->SetMapper(contourMapper);
+    isolines->GetProperty()->SetColor(colors->GetColor3d("Black").GetData());
+    isolines->GetProperty()->SetLineWidth(2);
+    isolines->SetPosition(5, 0, 0);
+
+    //isovalues
+    vtkNew<vtkPolyData> labelPolyData;
+    vtkNew<vtkPoints> labelPoints;
+    vtkNew<vtkDoubleArray> labelScalars;
+    labelScalars->SetNumberOfComponents(1);
+    labelScalars->SetName("Isovalues");
+
+    vtkPoints* points = contourStripper->GetOutput()->GetPoints();
+    vtkCellArray* cells = contourStripper->GetOutput()->GetLines();
+    vtkDataArray* scalars =
+        contourStripper->GetOutput()->GetPointData()->GetScalars();
+
+    // Newer versions of vtkCellArray prefer local iterators:
+    auto cellIter = vtk::TakeSmartPointer(cells->NewIterator());
+    for (cellIter->GoToFirstCell(); !cellIter->IsDoneWithTraversal(); cellIter->GoToNextCell())
+    {
+        vtkIdList* cell = cellIter->GetCurrentCell();
+
+        // Compute the point id to hold the label.
+        // Mid point or a random point.
+        // const vtkIdType samplePtIdx = cell->GetNumberOfIds() / 2;
+        const vtkIdType samplePtIdx = static_cast<vtkIdType>(
+            randomSequence->GetRangeValue(0, cell->GetNumberOfIds()));
+        randomSequence->Next();
+
+        auto midPointId = cell->GetId(samplePtIdx);
+
+        double midPoint[3];
+        points->GetPoint(midPointId, midPoint);
+        midPoint[0] += 5;
+        labelPoints->InsertNextPoint(midPoint);
+        labelScalars->InsertNextTuple1(scalars->GetTuple1(midPointId));
+    }
+
+    labelPolyData->SetPoints(labelPoints);
+    labelPolyData->GetPointData()->SetScalars(labelScalars);
+
+    vtkNew<vtkLabeledDataMapper> labelMapper;
+    labelMapper->SetFieldDataName("Isovalues");
+    labelMapper->SetInputData(labelPolyData);
+    labelMapper->SetLabelModeToLabelScalars();
+    labelMapper->SetLabelFormat("%6.2f");
+    labelMapper->GetLabelTextProperty()->SetColor(
+        colors->GetColor3d("Gold").GetData());
+
+    vtkNew<vtkActor2D> isolabels;
+    isolabels->SetMapper(labelMapper);
+
+    renderer->AddActor(surface);
+    renderer->AddActor(isolines);
+    renderer->AddActor(isolabels);
+
 #ifdef WATCH_RENDER_TIME
     std::chrono::high_resolution_clock timer;
     for (int i = 0; i < 10; ++i)
