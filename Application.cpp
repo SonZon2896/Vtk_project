@@ -76,21 +76,29 @@ void Application::Start()
     randomScalars->SetName("Isovalues");
     for (int i = 0; i < plane->GetOutput()->GetNumberOfPoints(); i++)
     {
-        randomScalars->InsertNextTuple1(randomSequence->GetRangeValue(0., 1.));
+        randomScalars->InsertNextTuple1(randomSequence->GetRangeValue(-100., 100.));
         randomSequence->Next();
     }
     plane->GetOutput()->GetPointData()->SetScalars(randomScalars);
     polyData = plane->GetOutput();
     contours->SetInputConnection(plane->GetOutputPort());
-    contours->GenerateValues(5, 0, 1);
+    contours->GenerateValues(8, -100, 100);
 
+    //bounds = plane->GetOutput()->GetBounds();
+
+    vtkNew<vtkElevationFilter> surfaceElevationFilter;
+    //surfaceElevationFilter->SetLowPoint(0, bounds[2], 0);
+    //surfaceElevationFilter->SetHighPoint(0, bounds[3], 0);
+    surfaceElevationFilter->AddInputConnection(plane->GetOutputPort());
+
+    vtkNew<vtkLookupTable> surfaceLUT;
+    surfaceLUT->SetRange(polyData->GetPointData()->GetScalars()->GetRange());
+    surfaceLUT->Build();
 
     vtkNew<vtkPolyDataMapper> surfaceMapper;
-    surfaceMapper->SetInputConnection(plane->GetOutputPort());
-    surfaceMapper->ScalarVisibilityOn();
-    surfaceMapper->SetLookupTable(ctf);
-    surfaceMapper->SetColorModeToMapScalars();
-    surfaceMapper->InterpolateScalarsBeforeMappingOn();
+    //surfaceMapper->SetLookupTable(surfaceLUT);
+    surfaceMapper->SetInputConnection(surfaceElevationFilter->GetOutputPort());
+    surfaceMapper->SetColorModeToDirectScalars();
 
     vtkNew<vtkActor> surface;
     surface->SetMapper(surfaceMapper);
@@ -103,11 +111,13 @@ void Application::Start()
 
     vtkNew<vtkPolyDataMapper> contourMapper;
     contourMapper->SetInputConnection(contourStripper->GetOutputPort());
-    contourMapper->ScalarVisibilityOff();
+    contourMapper->SetLookupTable(surfaceLUT);
+    contourMapper->ScalarVisibilityOn();
+    contourMapper->SetScalarRange(plane->GetOutput()->GetPointData()->GetScalars()->GetRange());
 
     vtkNew<vtkActor> isolines;
     isolines->SetMapper(contourMapper);
-    isolines->GetProperty()->SetColor(colors->GetColor3d("Black").GetData());
+    //isolines->GetProperty()->SetColor(colors->GetColor3d("Black").GetData());
     isolines->GetProperty()->SetLineWidth(2);
     isolines->SetPosition(5, 0, 0);
 
@@ -120,8 +130,7 @@ void Application::Start()
 
     vtkPoints* points = contourStripper->GetOutput()->GetPoints();
     vtkCellArray* cells = contourStripper->GetOutput()->GetLines();
-    vtkDataArray* scalars =
-        contourStripper->GetOutput()->GetPointData()->GetScalars();
+    vtkDataArray* scalars = contourStripper->GetOutput()->GetPointData()->GetScalars();
 
     // Newer versions of vtkCellArray prefer local iterators:
     auto cellIter = vtk::TakeSmartPointer(cells->NewIterator());
