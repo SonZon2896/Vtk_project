@@ -172,6 +172,58 @@ void Application::Start()
     renderer->AddActor(isolines);
     renderer->AddActor(isolabels);
 
+    vtkNew<vtkSphereSource> sphere;
+    sphere->SetRadius(1);
+    sphere->SetPhiResolution(12);
+    sphere->SetThetaResolution(12);
+
+    vtkNew<vtkDelaunay3D> delny;
+    delny->SetInputConnection(sphere->GetOutputPort());
+    delny->SetTolerance(0.01);
+    vtkNew<vtkPolyDataMapper> mapMesh;
+    mapMesh->SetInputConnection(delny->GetOutputPort());
+    
+    vtkNew<vtkExtractEdges> extract;
+    extract->SetInputConnection(delny->GetOutputPort());
+    vtkNew<vtkTubeFilter> tubes;
+    tubes->SetInputConnection(extract->GetOutputPort());
+    tubes->SetRadius(0.01);
+    tubes->SetNumberOfSides(6);
+    vtkNew<vtkPolyDataMapper> mapEdges;
+    mapEdges->SetInputConnection(tubes->GetOutputPort());
+    vtkNew<vtkActor> edgeActor;
+    edgeActor->SetMapper(mapEdges);
+    edgeActor->GetProperty()->SetColor(colors->GetColor3d("peacock").GetData());
+    edgeActor->GetProperty()->SetSpecularColor(1, 1, 1);
+    edgeActor->GetProperty()->SetSpecular(0.3);
+    edgeActor->GetProperty()->SetSpecularPower(20);
+    edgeActor->GetProperty()->SetAmbient(0.2);
+    edgeActor->GetProperty()->SetDiffuse(0.8);
+
+    vtkNew<vtkSphereSource> ball;
+    ball->SetRadius(0.025);
+    ball->SetThetaResolution(12);
+    ball->SetPhiResolution(12);
+    vtkNew<vtkGlyph3D> balls;
+    balls->SetInputConnection(delny->GetOutputPort());
+    balls->SetSourceConnection(ball->GetOutputPort());
+    vtkNew<vtkPolyDataMapper> mapBalls;
+    mapBalls->SetInputConnection(balls->GetOutputPort());
+    vtkNew<vtkActor> ballActor;
+    ballActor->SetMapper(mapBalls);
+    ballActor->GetProperty()->SetColor(colors->GetColor3d("hot_pink").GetData());
+    ballActor->GetProperty()->SetSpecularColor(1, 1, 1);
+    ballActor->GetProperty()->SetSpecular(0.3);
+    ballActor->GetProperty()->SetSpecularPower(20);
+    ballActor->GetProperty()->SetAmbient(0.2);
+    ballActor->GetProperty()->SetDiffuse(0.8);
+
+    edgeActor->SetPosition(-5, 0, 0);
+    ballActor->SetPosition(-5, 0, 0);
+
+    renderer->AddActor(edgeActor);
+    renderer->AddActor(ballActor);
+
 #ifdef WATCH_RENDER_TIME
     std::chrono::high_resolution_clock timer;
     for (int i = 0; i < 10; ++i)

@@ -43,6 +43,10 @@
 #include <vtkPointData.h>
 #include <vtkLookupTable.h>
 #include <vtkLabeledDataMapper.h>
+#include <vtkDelaunay3D.h>
+#include <vtkExtractEdges.h>
+#include <vtkTubeFilter.h>
+#include <vtkGlyph3D.h>
 #include <array>
 #include <string>
 #include <fstream>
