@@ -1,307 +1,107 @@
 #include "Application.h"
 
-//#define WATCH_RENDER_TIME
+Application::Application()
+{
+    auto style = GetStyle();
+    renderWindowInteractor->SetInteractorStyle(style);
 
-Application::Application(std::string filename)
+    std::array<unsigned char, 4> bkg{ 82, 87, 110, 255 };
+    colors->SetColor("ParaViewBkg", bkg.data());
+
+    renderWindow->SetSize(1280, 800);
+    renderWindow->SetWindowName("Vtk Project");
+    renderWindowInteractor->SetRenderWindow(renderWindow);
+}
+
+void Application::AddSettings(std::string filename)
 {
     pathToSettings = filename;
     UpdateJson();
 }
 
-void CallbackFunction(vtkObject* caller, long unsigned int vtkNotUsed(eventId),
-    void* vtkNotUsed(clientData), void* vtkNotUsed(callData))
+void Application::AddObject(std::string fileName, bool enableIsolines, bool enableGrid)
 {
-    vtkRenderer* renderer = static_cast<vtkRenderer*>(caller);
+    if (fileName.empty())
+        return;
 
-    double timeInSeconds = renderer->GetLastRenderTimeInSeconds();
-    double fps = 1.0 / timeInSeconds;
-    std::cout << "FPS: " << fps << std::endl;
+    std::string ext;
+    auto found = fileName.find_last_of(".");
+    if (found == std::string::npos)
+        return;
 
-    std::cout << "Callback" << std::endl;
+    ext = fileName.substr(found, fileName.size());
+
+    if (ext == ".3ds")
+    {
+        vtkNew<vtk3DSImporter> importer;
+        importer->SetFileName(fileName.c_str());
+        importer->ComputeNormalsOn();
+        importer->SetRenderWindow(renderWindow);
+        importer->Update();
+    }
+    else if (ext == ".csv3d")
+    {
+        vtkNew<CSV3DImporter> importer;
+        importer->SetFileName(fileName);
+        importer->Update();
+
+        vtkNew<vtkPolyData> polyData;
+        polyData->SetPoints(importer->GetPoints());
+        polyData->SetVerts(importer->GetVerts());
+        polyData->SetLines(importer->GetLines());
+        polyData->SetPolys(importer->GetPolys());
+
+        AddObject(polyData, enableIsolines, enableGrid);
+    }
+}
+
+void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool enableGrid)
+{
+    auto bounds = source->GetBounds();
+
+    vtkNew<vtkElevationFilter> elevationFilter;
+    elevationFilter->SetLowPoint(0, bounds[2], 0);
+    elevationFilter->SetHighPoint(0, bounds[3], 0);
+    elevationFilter->SetInputData(source);
+
+    auto ctf = GetCTF(source->GetScalarRange());
+
+    vtkNew<vtkPolyDataMapper> mapper;
+    if (enableIsolines)
+        mapper->SetInputData(source);
+    else
+        mapper->SetInputConnection(elevationFilter->GetOutputPort());
+    mapper->SetLookupTable(ctf);
+    mapper->SetColorModeToMapScalars();
+    mapper->InterpolateScalarsBeforeMappingOn();
+    mapper->SetScalarModeToUsePointData();
+
+    vtkNew<vtkActor> actor;
+    actor->SetMapper(mapper);
+    actor->SetObjectName("Main");
+
+    vtkNew<vtkRenderer> renderer;
+    renderer->AddActor(actor);
+    renderer->SetBackground(colors->GetColor3d("ParaViewBkg").GetData());
+
+    if (enableIsolines)
+        CreateIsolines(source, renderer);
+    if (enableGrid)
+        CreateGrid(source, renderer);
+
+    renderWindow->AddRenderer(renderer);
 }
 
 void Application::Start()
 {
-    std::array<unsigned char, 4> bkg{ 82, 87, 110, 255 };
-    vtkNew<vtkNamedColors> colors;
-    colors->SetColor("ParaViewBkg", bkg.data());
-
-    renderer->SetBackground(colors->GetColor3d("ParaViewBkg").GetData());
-
-    renderWindow->SetSize(1280, 800);
-    renderWindow->SetWindowName("Vtk Project");
-    renderWindow->AddRenderer(renderer);
-    renderWindowInteractor->SetRenderWindow(renderWindow);
-
-    auto style = GetStyle();
-    renderWindowInteractor->SetInteractorStyle(style);
-
-    vtkNew<vtkCylinderSource> cylinder;
-    cylinder->SetResolution(8);
-    //cylinder->SetDirection(0, 1, 0);
-    cylinder->SetHeight(20);
-    cylinder->Update();
-
-    auto bounds = cylinder->GetOutput()->GetBounds();
-
-    vtkNew<vtkElevationFilter> elevation_filter;
-    elevation_filter->SetLowPoint(0, bounds[2], 0);
-    elevation_filter->SetHighPoint(0, bounds[3], 0);
-    elevation_filter->SetInputConnection(cylinder->GetOutputPort());
-
-    auto ctf = GetColorTable();
-
-    mapper->SetInputConnection(elevation_filter->GetOutputPort());
-    mapper->SetLookupTable(ctf);
-    mapper->SetColorModeToMapScalars();
-    mapper->InterpolateScalarsBeforeMappingOn();
-
-    actor->SetMapper(mapper);
-
-    renderer->AddActor(actor);
-
-    vtkSmartPointer<vtkPolyData> polyData;
-    vtkNew<vtkContourFilter> contours;
-
-    vtkNew<vtkMinimalStandardRandomSequence> randomSequence;
-    randomSequence->SetSeed(2);
-
-    vtkNew<vtkPlaneSource> plane;
-    plane->SetXResolution(5);
-    plane->SetYResolution(5);
-    plane->Update();
-
-    vtkNew<vtkDoubleArray> randomScalars;
-    randomScalars->SetNumberOfComponents(1);
-    randomScalars->SetName("Isovalues");
-    for (int i = 0; i < plane->GetOutput()->GetNumberOfPoints(); i++)
-    {
-        randomScalars->InsertNextTuple1(randomSequence->GetRangeValue(-100., 100.));
-        randomSequence->Next();
-    }
-    plane->GetOutput()->GetPointData()->SetScalars(randomScalars);
-    polyData = plane->GetOutput();
-    contours->SetInputConnection(plane->GetOutputPort());
-    contours->GenerateValues(8, -100, 100);
-
-    //bounds = plane->GetOutput()->GetBounds();
-
-    vtkNew<vtkElevationFilter> surfaceElevationFilter;
-    //surfaceElevationFilter->SetLowPoint(0, bounds[2], 0);
-    //surfaceElevationFilter->SetHighPoint(0, bounds[3], 0);
-    surfaceElevationFilter->AddInputConnection(plane->GetOutputPort());
-
-    vtkNew<vtkLookupTable> surfaceLUT;
-    surfaceLUT->SetRange(polyData->GetPointData()->GetScalars()->GetRange());
-    surfaceLUT->Build();
-
-    vtkNew<vtkPolyDataMapper> surfaceMapper;
-    //surfaceMapper->SetLookupTable(surfaceLUT);
-    surfaceMapper->SetInputConnection(surfaceElevationFilter->GetOutputPort());
-    surfaceMapper->SetColorModeToDirectScalars();
-
-    vtkNew<vtkActor> surface;
-    surface->SetMapper(surfaceMapper);
-    surface->SetPosition(5, 0, 0);
-    
-    // Connect the segments of the contours into polylines.
-    vtkNew<vtkStripper> contourStripper;
-    contourStripper->SetInputConnection(contours->GetOutputPort());
-    contourStripper->Update();
-
-    vtkNew<vtkPolyDataMapper> contourMapper;
-    contourMapper->SetInputConnection(contourStripper->GetOutputPort());
-    contourMapper->SetLookupTable(surfaceLUT);
-    contourMapper->ScalarVisibilityOn();
-    contourMapper->SetScalarRange(plane->GetOutput()->GetPointData()->GetScalars()->GetRange());
-
-    vtkNew<vtkActor> isolines;
-    isolines->SetMapper(contourMapper);
-    //isolines->GetProperty()->SetColor(colors->GetColor3d("Black").GetData());
-    isolines->GetProperty()->SetLineWidth(2);
-    isolines->SetPosition(5, 0, 0);
-
-    //isovalues
-    vtkNew<vtkPolyData> labelPolyData;
-    vtkNew<vtkPoints> labelPoints;
-    vtkNew<vtkDoubleArray> labelScalars;
-    labelScalars->SetNumberOfComponents(1);
-    labelScalars->SetName("Isovalues");
-
-    vtkPoints* points = contourStripper->GetOutput()->GetPoints();
-    vtkCellArray* cells = contourStripper->GetOutput()->GetLines();
-    vtkDataArray* scalars = contourStripper->GetOutput()->GetPointData()->GetScalars();
-
-    // Newer versions of vtkCellArray prefer local iterators:
-    auto cellIter = vtk::TakeSmartPointer(cells->NewIterator());
-    for (cellIter->GoToFirstCell(); !cellIter->IsDoneWithTraversal(); cellIter->GoToNextCell())
-    {
-        vtkIdList* cell = cellIter->GetCurrentCell();
-
-        // Compute the point id to hold the label.
-        // Mid point or a random point.
-        // const vtkIdType samplePtIdx = cell->GetNumberOfIds() / 2;
-        const vtkIdType samplePtIdx = static_cast<vtkIdType>(
-            randomSequence->GetRangeValue(0, cell->GetNumberOfIds()));
-        randomSequence->Next();
-
-        auto midPointId = cell->GetId(samplePtIdx);
-
-        double midPoint[3];
-        points->GetPoint(midPointId, midPoint);
-        midPoint[0] += 5;
-        labelPoints->InsertNextPoint(midPoint);
-        labelScalars->InsertNextTuple1(scalars->GetTuple1(midPointId));
-    }
-
-    labelPolyData->SetPoints(labelPoints);
-    labelPolyData->GetPointData()->SetScalars(labelScalars);
-
-    vtkNew<vtkLabeledDataMapper> labelMapper;
-    labelMapper->SetFieldDataName("Isovalues");
-    labelMapper->SetInputData(labelPolyData);
-    labelMapper->SetLabelModeToLabelScalars();
-    labelMapper->SetLabelFormat("%6.2f");
-    labelMapper->GetLabelTextProperty()->SetColor(
-        colors->GetColor3d("Gold").GetData());
-
-    vtkNew<vtkActor2D> isolabels;
-    isolabels->SetMapper(labelMapper);
-
-    renderer->AddActor(surface);
-    renderer->AddActor(isolines);
-    renderer->AddActor(isolabels);
-
-    vtkNew<vtkSphereSource> sphere;
-    sphere->SetRadius(1);
-    sphere->SetPhiResolution(12);
-    sphere->SetThetaResolution(12);
-
-    vtkNew<vtkDelaunay3D> delny;
-    delny->SetInputConnection(sphere->GetOutputPort());
-    delny->SetTolerance(0.01);
-    vtkNew<vtkPolyDataMapper> mapMesh;
-    mapMesh->SetInputConnection(delny->GetOutputPort());
-    
-    vtkNew<vtkExtractEdges> extract;
-    extract->SetInputConnection(delny->GetOutputPort());
-    vtkNew<vtkTubeFilter> tubes;
-    tubes->SetInputConnection(extract->GetOutputPort());
-    tubes->SetRadius(0.01);
-    tubes->SetNumberOfSides(6);
-    vtkNew<vtkPolyDataMapper> mapEdges;
-    mapEdges->SetInputConnection(tubes->GetOutputPort());
-    vtkNew<vtkActor> edgeActor;
-    edgeActor->SetMapper(mapEdges);
-    edgeActor->GetProperty()->SetColor(colors->GetColor3d("peacock").GetData());
-    edgeActor->GetProperty()->SetSpecularColor(1, 1, 1);
-    edgeActor->GetProperty()->SetSpecular(0.3);
-    edgeActor->GetProperty()->SetSpecularPower(20);
-    edgeActor->GetProperty()->SetAmbient(0.2);
-    edgeActor->GetProperty()->SetDiffuse(0.8);
-
-    vtkNew<vtkSphereSource> ball;
-    ball->SetRadius(0.025);
-    ball->SetThetaResolution(12);
-    ball->SetPhiResolution(12);
-    vtkNew<vtkGlyph3D> balls;
-    balls->SetInputConnection(delny->GetOutputPort());
-    balls->SetSourceConnection(ball->GetOutputPort());
-    vtkNew<vtkPolyDataMapper> mapBalls;
-    mapBalls->SetInputConnection(balls->GetOutputPort());
-    vtkNew<vtkActor> ballActor;
-    ballActor->SetMapper(mapBalls);
-    ballActor->GetProperty()->SetColor(colors->GetColor3d("hot_pink").GetData());
-    ballActor->GetProperty()->SetSpecularColor(1, 1, 1);
-    ballActor->GetProperty()->SetSpecular(0.3);
-    ballActor->GetProperty()->SetSpecularPower(20);
-    ballActor->GetProperty()->SetAmbient(0.2);
-    ballActor->GetProperty()->SetDiffuse(0.8);
-
-    edgeActor->SetPosition(-5, 0, 0);
-    ballActor->SetPosition(-5, 0, 0);
-
-    renderer->AddActor(edgeActor);
-    renderer->AddActor(ballActor);
-
-#ifdef WATCH_RENDER_TIME
-    std::chrono::high_resolution_clock timer;
-    for (int i = 0; i < 10; ++i)
-    {
-        auto start = timer.now();
-        renderWindow->Render();
-        auto result = timer.now() - start;
-        std::cout << "Default Rendering time: " << std::chrono::duration_cast<std::chrono::milliseconds>(result).count() << std::endl;
-    }
-    std::cout << "Default GetRenderingBackEnd: " << renderWindow->GetRenderingBackend() << std::endl;
-
-    SaveScreen("DefaultRender.jpg");
-#else
-    vtkNew<vtkCallbackCommand> callback;
-
-    callback->SetCallback(CallbackFunction);
-    renderer->AddObserver(vtkCommand::EndEvent, callback);
     renderWindow->Render();
     renderWindowInteractor->Start();
-#endif
 }
 
 void Application::OffScreenRendering()
 {
-    std::array<unsigned char, 4> bkg{ 82, 87, 110, 255 };
-    vtkNew<vtkNamedColors> colors;
-    colors->SetColor("ParaViewBkg", bkg.data());
-
-    renderer->SetBackground(colors->GetColor3d("ParaViewBkg").GetData());
-
-    renderWindow->SetSize(1280, 800);
-    renderWindow->SetWindowName("Vtk Project");
-    renderWindow->AddRenderer(renderer);
-    renderWindowInteractor->SetRenderWindow(renderWindow);
-
-    auto style = GetStyle();
-    renderWindowInteractor->SetInteractorStyle(style);
-
-    vtkNew<vtkCylinderSource> cylinder;
-    cylinder->SetResolution(8);
-    //cylinder->SetDirection(0, 1, 0);
-    cylinder->SetHeight(20);
-    cylinder->Update();
-
-    auto bounds = cylinder->GetOutput()->GetBounds();
-
-    vtkNew<vtkElevationFilter> elevation_filter;
-    elevation_filter->SetLowPoint(0, bounds[2], 0);
-    elevation_filter->SetHighPoint(0, bounds[3], 0);
-    elevation_filter->SetInputConnection(cylinder->GetOutputPort());
-
-    auto ctf = GetColorTable();
-
-    mapper->SetInputConnection(elevation_filter->GetOutputPort());
-    mapper->SetLookupTable(ctf);
-    mapper->SetColorModeToMapScalars();
-    mapper->InterpolateScalarsBeforeMappingOn();
-
-    actor->SetMapper(mapper);
-
-    renderer->AddActor(actor);
-
     renderWindow->OffScreenRenderingOn();
-#ifdef WATCH_RENDER_TIME
-    std::chrono::high_resolution_clock timer;
-    for (int i = 0; i < 10; ++i)
-    {
-        auto start = timer.now();
-        renderWindow->Render();
-        auto result = timer.now() - start;
-        std::cout << "Off Screen Rendering time: " << std::chrono::duration_cast<std::chrono::milliseconds>(result).count() << std::endl;
-    }
-    std::cout << "Off Screen GetRenderingBackEnd: " << renderWindow->GetRenderingBackend() << std::endl;
-
-    SaveScreen("Off Screen Render.jpg");
-#else
     renderWindow->Render();
-#endif
 }
 
 void Application::SaveScreen(std::string fileName)
@@ -385,16 +185,21 @@ vtkNew<KeyPressInteractorStyle> Application::GetStyle()
 {
     vtkNew<KeyPressInteractorStyle> style;
     style->AddKeyBind("z", std::bind(&Application::UpdateSettings, this));
-    style->AddKeyBind("x", std::bind(&Application::ChangeParallelProjection, this));
-    style->AddKeyBind("c", std::bind(&Application::PrintClippingRange, this));
-    style->AddKeyBind("v", std::bind(&Application::ChangeClippingRangeMode, this));
-    style->AddKeyBind("b", std::bind(&Application::ChangeColorMode, this));
+    style->AddKeyBind("x", std::bind(&Application::ChangeProjectionToParallel, this));
+    style->AddKeyBind("c", std::bind(&Application::ChangeProjectionToPerspective, this));
+    style->AddKeyBind("v", std::bind(&Application::ChangeVisionToGradient, this));
+    style->AddKeyBind("b", std::bind(&Application::ChangeVisionToDiscrete, this));
+    style->AddKeyBind("n", std::bind(&Application::ChangeVisionToIsolines, this));
+    style->AddKeyBind("m", std::bind(&Application::ChangeVisionToGrid, this));
+    style->AddKeyBind("h", std::bind(&Application::ChangeIsolines, this));
+    style->AddKeyBind("g", std::bind(&Application::ChangeGrid, this));
     return style;
 }
 
-vtkNew<vtkDiscretizableColorTransferFunction> Application::GetColorTable()
+vtkNew<vtkDCTF> Application::GetCTF(double minValue, double maxValue)
 {
     vtkNew<vtkDiscretizableColorTransferFunction> ctf;
+    double oneRange = (maxValue - minValue) / 8;
 
     ctf->SetColorSpaceToLab();
     ctf->SetScaleToLinear();
@@ -405,75 +210,218 @@ vtkNew<vtkDiscretizableColorTransferFunction> Application::GetColorTable()
     ctf->SetBelowRangeColor(0, 0, 0);
     ctf->UseBelowRangeColorOn();
 
-    ctf->AddRGBPoint(0, 0.05639999999999999, 0.05639999999999999, 0.47);
-    ctf->AddRGBPoint(0.17159223942480895, 0.24300000000000013, 0.4603500000000004,
-        0.81);
-    ctf->AddRGBPoint(0.2984914818394138, 0.3568143826543521, 0.7450246485363142,
-        0.954367702893722);
-    ctf->AddRGBPoint(0.4321287371255907, 0.6882, 0.93, 0.9179099999999999);
-    ctf->AddRGBPoint(0.5, 0.8994959551205902, 0.944646394975174,
-        0.7686567142818399);
-    ctf->AddRGBPoint(0.5882260353170073, 0.957107977357604, 0.8338185108985666,
-        0.5089156299842102);
-    ctf->AddRGBPoint(0.7061412605695164, 0.9275207599610714, 0.6214389091739178,
-        0.31535705838676426);
-    ctf->AddRGBPoint(0.8476395308725272, 0.8, 0.3520000000000001,
-        0.15999999999999998);
-    ctf->AddRGBPoint(1, 0.59, 0.07670000000000013, 0.11947499999999994);
+    ctf->AddRGBPoint(minValue + oneRange * 0, 0.05639999999999999, 0.05639999999999999, 0.47);
+    ctf->AddRGBPoint(minValue + oneRange * 1, 0.24300000000000013, 0.4603500000000004, 0.81);
+    ctf->AddRGBPoint(minValue + oneRange * 2, 0.3568143826543521, 0.7450246485363142, 0.954367702893722);
+    ctf->AddRGBPoint(minValue + oneRange * 3, 0.6882, 0.93, 0.9179099999999999);
+    ctf->AddRGBPoint(minValue + oneRange * 4, 0.8994959551205902, 0.944646394975174, 0.7686567142818399);
+    ctf->AddRGBPoint(minValue + oneRange * 5, 0.957107977357604, 0.8338185108985666, 0.5089156299842102);
+    ctf->AddRGBPoint(minValue + oneRange * 6, 0.9275207599610714, 0.6214389091739178, 0.31535705838676426);
+    ctf->AddRGBPoint(minValue + oneRange * 7, 0.8, 0.3520000000000001, 0.15999999999999998);
+    ctf->AddRGBPoint(minValue + oneRange * 8, 0.59, 0.07670000000000013, 0.11947499999999994);
 
     ctf->SetNumberOfValues(9);
     ctf->DiscretizeOff();
 
+    ctfs.push_back(ctf);
     return ctf;
 }
 
 void Application::UpdateSettings()
 {
-    std::cout << "Updating settings...\n";
+    if (pathToSettings.empty())
+        return;
+
     UpdateJson();
 
-    auto camera = renderer->GetActiveCamera();
-    camera->SetParallelProjection(settings["Projection"]["IsEnabled"]);
-    camera->SetParallelScale(settings["Projection"]["ParallelScale"]);
-    camera->SetClippingRange(settings["Projection"]["ClippingRange"]["Min"],
-                             settings["Projection"]["ClippingRange"]["Max"]);
-
-    actor->GetProperty()->SetColor(
-        colors->GetColor3d(settings["Actor"]["Color"]).GetData());
-    actor->GetProperty()->SetOpacity((double)settings["Actor"]["Opacity"] / 100);
+    
 
     renderWindow->Render();
 }
 
-void Application::ChangeParallelProjection()
+void Application::ChangeProjection(unsigned int mode)
 {
-    auto camera = renderer->GetActiveCamera();
-    bool flag = camera->GetParallelProjection();
-    camera->SetParallelProjection(!flag);
+    if (mode > 1)
+        return;
+
+    vtkRendererCollection *renderers = renderWindow->GetRenderers();
+    vtkCollectionIterator *renderersIter = renderers->NewIterator();
+    for (renderersIter->GoToFirstItem(); !renderersIter->IsDoneWithTraversal(); renderersIter->GoToNextItem())
+    {
+        auto renderer = static_cast<vtkRenderer*>(renderersIter->GetCurrentObject());
+        auto camera = renderer->GetActiveCamera();
+        if (mode == 0)
+            camera->SetParallelProjection(true);
+        if (mode == 1)
+            camera->SetParallelProjection(false);
+    }
     
     renderWindow->Render();
 }
 
-void Application::PrintClippingRange()
+void Application::ChangeVision(unsigned int mode)
 {
-    auto clippingRange = renderer->GetActiveCamera()->GetClippingRange();
-    std::cout << "Now ClippingRange is " << clippingRange[0] << ", " << clippingRange[1] << ".\n";
-}
-
-void Application::ChangeClippingRangeMode()
-{
-    auto style = (vtkInteractorStyle *)(renderWindowInteractor->GetInteractorStyle());
-    bool flag = style->GetAutoAdjustCameraClippingRange();
-    style->SetAutoAdjustCameraClippingRange(!flag);
-
+    switch (mode)
+    {
+    case 0:
+        for (auto ctf : ctfs)
+            ctf->DiscretizeOff();
+        break;
+    case 1:
+        for (auto ctf : ctfs)
+            ctf->DiscretizeOn();
+        break;
+    case 2:
+        ShowIsolinesOn();
+        break;
+    case 3:
+        ShowGridOn();
+        break;
+    default:
+        return;
+    }
     renderWindow->Render();
 }
 
-void Application::ChangeColorMode()
+void Application::CreateIsolines(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> renderer)
 {
-    auto colorTable = dynamic_cast<vtkDiscretizableColorTransferFunction*>(mapper->GetLookupTable());
-    bool flag = colorTable->GetDiscretize();
-    colorTable->SetDiscretize(!flag);
+    double range[2];
+    source->GetScalarRange(range);
 
+    vtkNew<vtkContourFilter> contourFilter;
+    contourFilter->SetInputData(source);
+    contourFilter->GenerateValues(10, range[0], range[1]);
+
+    vtkNew<vtkStripper> stripper;
+    stripper->SetInputConnection(contourFilter->GetOutputPort());
+    stripper->Update();
+
+    vtkNew<vtkLookupTable> surfaceLUT;
+    surfaceLUT->SetRange(range);
+    surfaceLUT->Build();
+
+    vtkNew<vtkPolyDataMapper> isoMapper;
+    isoMapper->SetInputConnection(stripper->GetOutputPort());
+    isoMapper->SetLookupTable(surfaceLUT);
+    isoMapper->ScalarVisibilityOn();
+    isoMapper->SetScalarRange(range);
+
+    vtkNew<vtkActor> isolinesActor;
+    isolinesActor->SetObjectName("Isolines");
+    isolinesActor->SetMapper(isoMapper);
+    isolinesActor->GetProperty()->SetLineWidth(2);
+
+    renderer->AddActor(isolinesActor);
+}
+
+void Application::CreateGrid(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> renderer)
+{
+    vtkNew<vtkExtractEdges> extract;
+    extract->SetInputData(source);
+    vtkNew<vtkTubeFilter> tubes;
+    tubes->SetInputConnection(extract->GetOutputPort());
+    tubes->SetRadius(0.01);
+    tubes->SetNumberOfSides(3);
+    vtkNew<vtkPolyDataMapper> mapEdges;
+    mapEdges->SetInputConnection(tubes->GetOutputPort());
+    vtkNew<vtkActor> edgesActor;
+    edgesActor->SetObjectName("Edges");
+    edgesActor->SetMapper(mapEdges);
+    edgesActor->GetProperty()->SetColor(colors->GetColor3d("peacock").GetData());
+    edgesActor->GetProperty()->SetSpecularColor(1, 1, 1);
+    edgesActor->GetProperty()->SetSpecular(0.3);
+    edgesActor->GetProperty()->SetSpecularPower(20);
+    edgesActor->GetProperty()->SetAmbient(0.2);
+    edgesActor->GetProperty()->SetDiffuse(0.8);
+
+    vtkNew<vtkSphereSource> ball;
+    ball->SetRadius(0.025);
+    ball->SetThetaResolution(2);
+    ball->SetPhiResolution(2);
+    vtkNew<vtkGlyph3D> balls;
+    balls->SetInputData(source);
+    balls->SetSourceConnection(ball->GetOutputPort());
+    vtkNew<vtkPolyDataMapper> mapBalls;
+    mapBalls->SetInputConnection(balls->GetOutputPort());
+    vtkNew<vtkActor> VertexesActor;
+    VertexesActor->SetObjectName("Vertexes");
+    VertexesActor->SetMapper(mapBalls);
+    VertexesActor->GetProperty()->SetColor(colors->GetColor3d("hot_pink").GetData());
+
+    vtkNew<vtkLabeledDataMapper> labelMapper;
+    labelMapper->SetInputData(source);
+
+    vtkNew<vtkActor2D> labelsActor;
+    labelsActor->SetObjectName("Labels");
+    labelsActor->SetMapper(labelMapper);
+
+    renderer->AddActor(edgesActor);
+    renderer->AddActor(labelsActor);
+    renderer->AddActor(VertexesActor);
+
+    edgesActor->VisibilityOff();
+    VertexesActor->VisibilityOff();
+    labelsActor->VisibilityOff();
+
+    vtkNew<UpdateMeshGridCallback> callback;
+    callback->SetSphereSource(ball);
+    callback->SetCylinderSource(tubes);
+
+    renderer->AddObserver(vtkCommand::StartEvent, callback);
+}
+
+void Application::ShowIsolines(bool flag)
+{
+    auto renderersIter = renderWindow->GetRenderers()->NewIterator();
+    for (renderersIter->GoToFirstItem(); !renderersIter->IsDoneWithTraversal(); renderersIter->GoToNextItem())
+    {
+        auto renderer = static_cast<vtkRenderer *>(renderersIter->GetCurrentObject());
+        auto actorsIter = renderer->GetActors()->NewIterator();
+        for (actorsIter->GoToFirstItem(); !actorsIter->IsDoneWithTraversal(); actorsIter->GoToNextItem())
+        {
+            auto actor = static_cast<vtkActor*>(actorsIter->GetCurrentObject());
+            if (actor->GetObjectName() == "Isolines")
+            {
+                if (flag)
+                    actor->VisibilityOn();
+                else
+                    actor->VisibilityOff();
+            }
+        }
+    }
+    renderWindow->Render();
+}
+
+void Application::ShowGrid(bool flag)
+{
+    auto renderersIter = renderWindow->GetRenderers()->NewIterator();
+    for (renderersIter->GoToFirstItem(); !renderersIter->IsDoneWithTraversal(); renderersIter->GoToNextItem())
+    {
+        auto renderer = static_cast<vtkRenderer *>(renderersIter->GetCurrentObject());
+        auto actorsIter = renderer->GetActors()->NewIterator();
+        for (actorsIter->GoToFirstItem(); !actorsIter->IsDoneWithTraversal(); actorsIter->GoToNextItem())
+        {
+            auto actor = static_cast<vtkActor *>(actorsIter->GetCurrentObject());
+            if (actor->GetObjectName() == "Edges" || actor->GetObjectName() == "Vertexes")
+            {
+                if (flag)
+                    actor->VisibilityOn();
+                else
+                    actor->VisibilityOff();
+            }
+        }
+        auto actors2DIter = renderer->GetActors2D()->NewIterator();
+        for (actors2DIter->GoToFirstItem(); !actors2DIter->IsDoneWithTraversal(); actors2DIter->GoToNextItem())
+        {
+            auto actor2D = static_cast<vtkActor2D*>(actors2DIter->GetCurrentObject());
+            if (actor2D->GetObjectName() == "Labels")
+            {
+                if (flag)
+                    actor2D->VisibilityOn();
+                else
+                    actor2D->VisibilityOff();
+            }
+        }
+    }
     renderWindow->Render();
 }

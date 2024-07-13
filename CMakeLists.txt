@@ -6,8 +6,14 @@ find_package(VTK COMPONENTS
   CommonColor
   CommonCore
   CommonDataModel
+  CommonTransforms
   FiltersCore
+  FiltersGeneral
+  FiltersPoints
   FiltersSources
+  IOGeometry
+  IOImport
+  IOInfovis
   IOXML
   IOGeometry
   InteractionStyle
@@ -25,9 +31,12 @@ endif()
 
 # Prevent a "command line is too long" failure in Windows.
 set(CMAKE_NINJA_FORCE_RESPONSE_FILE "ON" CACHE BOOL "Force Ninja to use response files.")
-add_executable(VTK_Project MACOSX_BUNDLE vtk_project.cpp "Application.cpp" "Interactor.cpp"  )
+add_executable(VTK_Project MACOSX_BUNDLE vtk_project.cpp "Application.cpp" "Interactor.cpp"   "CSV3DImporter.h" "CSV3DImporter.cpp" "UpdateMeshGridCallback.h" "UpdateMeshGridCallback.cpp")
   target_link_libraries(VTK_Project PRIVATE ${VTK_LIBRARIES}
 )
+
+file(COPY Examples DESTINATION "${CMAKE_BINARY_DIR}")
+
 # vtk_module_autoinit is needed
 vtk_module_autoinit(
   TARGETS VTK_Project
