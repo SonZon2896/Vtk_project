@@ -33,8 +33,8 @@ int main(int argc, char* argv[])
     plane->GetOutput()->GetPointData()->SetScalars(randomScalars);
 
     vtkNew<vtkSphereSource> sphere;
-    sphere->SetPhiResolution(4);
-    sphere->SetThetaResolution(4);
+    sphere->SetPhiResolution(6);
+    sphere->SetThetaResolution(6);
     sphere->Update();
 
     //app.AddObject(cylinder->GetOutput(), false, true);

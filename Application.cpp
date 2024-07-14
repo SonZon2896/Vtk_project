@@ -266,15 +266,21 @@ void Application::ChangeVision(unsigned int mode)
     case 0:
         for (auto ctf : ctfs)
             ctf->DiscretizeOff();
+        ShowIsolinesOff();
+        ShowGridOff();
         break;
     case 1:
         for (auto ctf : ctfs)
             ctf->DiscretizeOn();
+        ShowIsolinesOff();
+        ShowGridOff();
         break;
     case 2:
         ShowIsolinesOn();
+        ShowGridOff();
         break;
     case 3:
+        ShowIsolinesOff();
         ShowGridOn();
         break;
     default:
@@ -348,16 +354,26 @@ void Application::CreateGrid(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> rende
     VertexesActor->SetMapper(mapBalls);
     VertexesActor->GetProperty()->SetColor(colors->GetColor3d("hot_pink").GetData());
 
+    vtkNew<vtkIdFilter> idFilter;
+    idFilter->SetInputData(source);
+    idFilter->PointIdsOn();
+
+    vtkNew<vtkSelectVisiblePoints> visiblePoints;
+    visiblePoints->SetInputConnection(idFilter->GetOutputPort());
+    visiblePoints->SetRenderer(renderer);
+
     vtkNew<vtkLabeledDataMapper> labelMapper;
-    labelMapper->SetInputData(source);
+    labelMapper->SetInputConnection(visiblePoints->GetOutputPort());
+    labelMapper->SetLabelModeToLabelFieldData();
 
     vtkNew<vtkActor2D> labelsActor;
     labelsActor->SetObjectName("Labels");
     labelsActor->SetMapper(labelMapper);
+    labelsActor->GetProperty()->SetColor(colors->GetColor3d("Yellow").GetData());
 
     renderer->AddActor(edgesActor);
-    renderer->AddActor(labelsActor);
     renderer->AddActor(VertexesActor);
+    renderer->AddActor(labelsActor);
 
     edgesActor->VisibilityOff();
     VertexesActor->VisibilityOff();

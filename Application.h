@@ -55,6 +55,9 @@
 #include <vtkTableToPolyData.h>
 #include <vtkDelimitedTextReader.h>
 #include <vtkPointInterpolator.h>
+#include <vtkSelectVisiblePoints.h>
+#include <vtkIdFilter.h>
+#include <vtkProperty2D.h>
 #include <vtkTable.h>
 #include <array>
 #include <string>
@@ -115,6 +118,7 @@ public:
 	void ChangeIsolines() { ShowIsolines(!isolinesVisibility); isolinesVisibility = !isolinesVisibility; }
 	void ShowIsolinesOn() { ShowIsolines(true); }
 	void ShowIsolinesOff() { ShowIsolines(false); }
+
 	void ShowGrid(bool flag);
 	void ChangeGrid() { ShowGrid(!gridVisibility); gridVisibility = !gridVisibility; }
 	void ShowGridOn() { ShowGrid(true); }
