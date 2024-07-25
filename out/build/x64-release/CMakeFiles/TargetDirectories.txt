@@ -1,3 +1,0 @@
-D:/Git_Projects/Vtk_project/out/build/x64-release/CMakeFiles/VTK_Project.dir
-D:/Git_Projects/Vtk_project/out/build/x64-release/CMakeFiles/edit_cache.dir
-D:/Git_Projects/Vtk_project/out/build/x64-release/CMakeFiles/rebuild_cache.dir

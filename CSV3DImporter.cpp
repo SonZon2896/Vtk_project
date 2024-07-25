@@ -72,8 +72,6 @@ void CSV3DImporter::Update()
 {
 	std::cout << "Entered in function 'CSV3DImporter::Update'" << std::endl;
 
-	const int numOfDelimitersNodes = 30;
-
 	std::ifstream file(fileName);
 	std::string fileString;
 	if (file.is_open())
@@ -142,6 +140,7 @@ void CSV3DImporter::Update()
 		lines = linesTemp;
 		polys = polysTemp;
 	}
+	file.close();
 
 	std::cout << "Reading end" << std::endl;
 }

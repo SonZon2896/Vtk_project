@@ -1,2 +1,5 @@
 ﻿.vs
 Examples
+out/build/x64-debug
+out/build/x64-debug
+out

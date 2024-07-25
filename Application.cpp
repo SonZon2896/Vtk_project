@@ -54,7 +54,7 @@ void Application::AddObject(std::string fileName, bool enableIsolines, bool enab
         std::cout << "read csv3d file" << std::endl;
 
         vtkNew<CSV3DImporter> importer;
-        importer->SetFileName(fileName);
+        importer->fileName = fileName;
         importer->Update();
 
         vtkNew<vtkPolyData> polyData;
@@ -63,7 +63,7 @@ void Application::AddObject(std::string fileName, bool enableIsolines, bool enab
         polyData->SetLines(importer->GetLines());
         polyData->SetPolys(importer->GetPolys());
 
-        AddObject(polyData, enableIsolines, enableGrid);
+        AddObject(polyData, false, enableGrid);
 
         std::cout << "File readed" << std::endl;
         return;
