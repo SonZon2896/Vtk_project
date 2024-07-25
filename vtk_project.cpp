@@ -7,7 +7,7 @@
 int main(int argc, char* argv[])
 {
     Application app;
-    app.AddSettings(PATHTOSETTINGS);
+    //app.AddSettings(PATHTOSETTINGS);
     
     vtkNew<vtkCylinderSource> cylinder;
     cylinder->SetResolution(8);
@@ -33,13 +33,13 @@ int main(int argc, char* argv[])
     plane->GetOutput()->GetPointData()->SetScalars(randomScalars);
 
     vtkNew<vtkSphereSource> sphere;
-    sphere->SetPhiResolution(6);
-    sphere->SetThetaResolution(6);
+    sphere->SetPhiResolution(25);
+    sphere->SetThetaResolution(25);
     sphere->Update();
 
     //app.AddObject(cylinder->GetOutput(), false, true);
-    //app.AddObject(plane->GetOutput(), true, false);
-    //app.AddObject("Examples\\Workpiece.csv3d", false, true);
+    //app.AddObject(plane->GetOutput(), true, true);
+    //app.AddObject("Examples\\WP - new geom 09 01 24_+10.csv3d", false, true);
     app.AddObject(sphere->GetOutput(), false, true); 
 
     app.Start();

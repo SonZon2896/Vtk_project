@@ -1,14 +1,12 @@
 {
-  "Projection": {
-    "ClippingRange": {
-      "Max": 4,
-      "Min": 12
+  "Button": {
+    "Position": {
+      "x": 100,
+      "y": 100
     },
-    "IsEnabled": true,
-    "ParallelScale": 10
-  },
-  "Actor": {
-    "Color": "LightSteelBlue",
-    "Opacity":  100
+    "Size": {
+      "x": 50,
+      "y": 50
+    }
   }
 }

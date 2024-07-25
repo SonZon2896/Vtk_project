@@ -3,6 +3,9 @@
 #include <vtkActor.h>
 #include <vtkActor2D.h>
 #include <vtkNamedColors.h>
+#include <vtkColor.h>
+#include <vtkButtonRepresentation.h>
+#include <vtkButtonWidget.h>
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
 #include <vtkCellIterator.h>
@@ -27,6 +30,7 @@
 #include <vtkCubeSource.h>
 #include <vtkStripper.h>
 #include <vtkImageWriter.h>
+#include <vtkImageData.h>
 #include <vtkBMPWriter.h>
 #include <vtkJPEGWriter.h>
 #include <vtkPNMWriter.h>
@@ -56,9 +60,13 @@
 #include <vtkDelimitedTextReader.h>
 #include <vtkPointInterpolator.h>
 #include <vtkSelectVisiblePoints.h>
+#include <vtkTexturedButtonRepresentation2D.h>
+#include <vtkButtonWidget.h>
+#include <vtkStdString.h>
 #include <vtkIdFilter.h>
 #include <vtkProperty2D.h>
 #include <vtkTable.h>
+#include <vtkCoordinate.h>
 #include <array>
 #include <string>
 #include <fstream>
@@ -66,6 +74,7 @@
 #include "Interactor.h"
 #include "CSV3DImporter.h"
 #include "UpdateMeshGridCallback.h"
+#include "ChangeVisionSliderCallback.h"
 
 #include <chrono>
 #include <thread>
@@ -84,22 +93,30 @@ class Application {
 private:
 	bool isolinesVisibility = true;
 	bool gridVisibility = false;
+	bool labelsVisibility = false;
 
 	json settings;
 	std::string pathToSettings;
 
-	vtkNew<vtkNamedColors> colors;
 	std::vector<vtkSP<vtkDiscretizableColorTransferFunction>> ctfs;
-	vtkNew<vtkRenderWindow> renderWindow;
-	vtkNew<vtkRenderWindowInteractor> renderWindowInteractor;
+	std::vector<vtkSP<vtkActor>> mainActors;
+	std::vector<vtkSP<vtkActor>> isolinesActors;
+	std::vector<std::pair<vtkSP<vtkActor>, vtkSP<vtkActor>>> gridActors;
+	std::vector<vtkSP<vtkActor2D>> labelsActors;
+
+	vtkSP<vtkNamedColors> colors;
+	vtkSP<vtkRenderWindow> renderWindow;
+	vtkSP<vtkRenderWindowInteractor> renderWindowInteractor;
+	vtkSP<vtkSliderWidget> changeVisionSliderWidget;
 
 	void UpdateJson();
-	vtkNew<KeyPressInteractorStyle>GetStyle();
-	vtkNew<vtkDCTF> GetCTF(double minValue, double maxValue);
-	inline vtkNew<vtkDCTF> GetCTF(double* range) { return GetCTF(range[0], range[1]); }
+	vtkSP<vtkDCTF> GetCTF(double minValue, double maxValue);
+	inline vtkSP<vtkDCTF> GetCTF(double* range) { return GetCTF(range[0], range[1]); }
 
 	void CreateIsolines(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> renderer);
 	void CreateGrid(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> renderer);
+
+	void CreateSlider();
 public:
 	Application();
 
@@ -123,6 +140,11 @@ public:
 	void ChangeGrid() { ShowGrid(!gridVisibility); gridVisibility = !gridVisibility; }
 	void ShowGridOn() { ShowGrid(true); }
 	void ShowGridOff() { ShowGrid(false); }
+
+	void ShowLabels(bool flag);
+	void ChangeLabels() { ShowLabels(!labelsVisibility); labelsVisibility = !labelsVisibility; }
+	void ShowLabelsOn() { ShowLabels(true); }
+	void ShowLabelsOff() { ShowLabels(false); }
 
 	void ChangeProjection(unsigned int mode);
 	void ChangeProjectionToParallel() { ChangeProjection(0); }

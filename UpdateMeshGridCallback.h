@@ -13,8 +13,8 @@ private:
     vtkSmartPointer<vtkSphereSource> sphereSource;
     vtkSmartPointer<vtkTubeFilter> cylinderSource;
 
-    double sphereScale = .005;
-    double cylinderScale = .003;
+    double sphereScale = .003;
+    double cylinderScale = .0003;
 
 public:
     static UpdateMeshGridCallback* New() { return new UpdateMeshGridCallback; }

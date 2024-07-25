@@ -17,6 +17,7 @@ find_package(VTK COMPONENTS
   IOXML
   IOGeometry
   InteractionStyle
+  InteractionWidgets
   RenderingContextOpenGL2
   RenderingCore
   RenderingFreeType
@@ -31,7 +32,13 @@ endif()
 
 # Prevent a "command line is too long" failure in Windows.
 set(CMAKE_NINJA_FORCE_RESPONSE_FILE "ON" CACHE BOOL "Force Ninja to use response files.")
-add_executable(VTK_Project MACOSX_BUNDLE vtk_project.cpp "Application.cpp" "Interactor.cpp"   "CSV3DImporter.h" "CSV3DImporter.cpp" "UpdateMeshGridCallback.h" "UpdateMeshGridCallback.cpp")
+add_executable(VTK_Project MACOSX_BUNDLE 
+	vtk_project.cpp
+	"Application.cpp"
+	"Interactor.cpp"
+	"CSV3DImporter.cpp"
+	"UpdateMeshGridCallback.cpp"
+	"ChangeVisionSliderCallback.cpp")
   target_link_libraries(VTK_Project PRIVATE ${VTK_LIBRARIES}
 )
 

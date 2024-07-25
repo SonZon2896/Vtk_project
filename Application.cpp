@@ -2,11 +2,14 @@
 
 Application::Application()
 {
-    auto style = GetStyle();
-    renderWindowInteractor->SetInteractorStyle(style);
+    std::cout << "Initialize Application" << std::endl;
 
-    std::array<unsigned char, 4> bkg{ 82, 87, 110, 255 };
-    colors->SetColor("ParaViewBkg", bkg.data());
+    colors = vtkNamedColors::New();
+    renderWindow = vtkRenderWindow::New();
+    renderWindowInteractor = vtkRenderWindowInteractor::New();
+
+    vtkNew<vtkInteractorStyleTrackballCamera> style;
+    renderWindowInteractor->SetInteractorStyle(style);
 
     renderWindow->SetSize(1280, 800);
     renderWindow->SetWindowName("Vtk Project");
@@ -15,12 +18,16 @@ Application::Application()
 
 void Application::AddSettings(std::string filename)
 {
+    std::cout << "Entered in function 'AddSettings'" << std::endl;
+
     pathToSettings = filename;
     UpdateJson();
 }
 
 void Application::AddObject(std::string fileName, bool enableIsolines, bool enableGrid)
 {
+    std::cout << "Start read object in file" << std::endl;
+
     if (fileName.empty())
         return;
 
@@ -38,9 +45,14 @@ void Application::AddObject(std::string fileName, bool enableIsolines, bool enab
         importer->ComputeNormalsOn();
         importer->SetRenderWindow(renderWindow);
         importer->Update();
+
+        std::cout << "File readed" << std::endl;
+        return;
     }
     else if (ext == ".csv3d")
     {
+        std::cout << "read csv3d file" << std::endl;
+
         vtkNew<CSV3DImporter> importer;
         importer->SetFileName(fileName);
         importer->Update();
@@ -52,11 +64,21 @@ void Application::AddObject(std::string fileName, bool enableIsolines, bool enab
         polyData->SetPolys(importer->GetPolys());
 
         AddObject(polyData, enableIsolines, enableGrid);
+
+        std::cout << "File readed" << std::endl;
+        return;
+    }
+    else
+    {
+        std::cout << "File " << fileName << " not found" << std::endl;
+        return;
     }
 }
 
 void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool enableGrid)
 {
+    std::cout << "Adding Object" << std::endl;
+
     auto bounds = source->GetBounds();
 
     vtkNew<vtkElevationFilter> elevationFilter;
@@ -67,7 +89,7 @@ void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool
     auto ctf = GetCTF(source->GetScalarRange());
 
     vtkNew<vtkPolyDataMapper> mapper;
-    if (enableIsolines)
+    if (enableIsolines == true)
         mapper->SetInputData(source);
     else
         mapper->SetInputConnection(elevationFilter->GetOutputPort());
@@ -78,34 +100,49 @@ void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool
 
     vtkNew<vtkActor> actor;
     actor->SetMapper(mapper);
-    actor->SetObjectName("Main");
 
     vtkNew<vtkRenderer> renderer;
     renderer->AddActor(actor);
-    renderer->SetBackground(colors->GetColor3d("ParaViewBkg").GetData());
+    renderer->SetBackground(0., 127., 127.);
 
-    if (enableIsolines)
+    if (enableIsolines == true)
+    {
         CreateIsolines(source, renderer);
-    if (enableGrid)
+    }
+    if (enableGrid == true)
+    {
         CreateGrid(source, renderer);
+    }
 
     renderWindow->AddRenderer(renderer);
+
+    mainActors.push_back(actor);
+
+    std::cout << "Object Created" << std::endl;
 }
 
 void Application::Start()
 {
+    std::cout << "Entered in function 'Start'" << std::endl;
+
+    CreateSlider();
+
     renderWindow->Render();
     renderWindowInteractor->Start();
 }
 
 void Application::OffScreenRendering()
 {
+    std::cout << "Entered in function 'OffScreenRendering'" << std::endl;
+
     renderWindow->OffScreenRenderingOn();
     renderWindow->Render();
 }
 
 void Application::SaveScreen(std::string fileName)
 {
+    std::cout << "Entered in function 'SaveScreen'" << std::endl;
+
     bool rgba = true;
     if (!fileName.empty())
     {
@@ -177,27 +214,16 @@ void Application::SaveScreen(std::string fileName)
 
 void Application::UpdateJson()
 {
+    std::cout << "Entered in function 'UpdateJson'" << std::endl;
+
     std::ifstream f(pathToSettings);
     settings = json::parse(f);
 }
 
-vtkNew<KeyPressInteractorStyle> Application::GetStyle()
+vtkSP<vtkDCTF> Application::GetCTF(double minValue, double maxValue)
 {
-    vtkNew<KeyPressInteractorStyle> style;
-    style->AddKeyBind("z", std::bind(&Application::UpdateSettings, this));
-    style->AddKeyBind("x", std::bind(&Application::ChangeProjectionToParallel, this));
-    style->AddKeyBind("c", std::bind(&Application::ChangeProjectionToPerspective, this));
-    style->AddKeyBind("v", std::bind(&Application::ChangeVisionToGradient, this));
-    style->AddKeyBind("b", std::bind(&Application::ChangeVisionToDiscrete, this));
-    style->AddKeyBind("n", std::bind(&Application::ChangeVisionToIsolines, this));
-    style->AddKeyBind("m", std::bind(&Application::ChangeVisionToGrid, this));
-    style->AddKeyBind("h", std::bind(&Application::ChangeIsolines, this));
-    style->AddKeyBind("g", std::bind(&Application::ChangeGrid, this));
-    return style;
-}
+    std::cout << "Entered in function 'GetCTF'" << std::endl;
 
-vtkNew<vtkDCTF> Application::GetCTF(double minValue, double maxValue)
-{
     vtkNew<vtkDiscretizableColorTransferFunction> ctf;
     double oneRange = (maxValue - minValue) / 8;
 
@@ -229,6 +255,8 @@ vtkNew<vtkDCTF> Application::GetCTF(double minValue, double maxValue)
 
 void Application::UpdateSettings()
 {
+    std::cout << "Entered in function 'UpdateSettings'" << std::endl;
+
     if (pathToSettings.empty())
         return;
 
@@ -241,6 +269,8 @@ void Application::UpdateSettings()
 
 void Application::ChangeProjection(unsigned int mode)
 {
+    std::cout << "Entered in function 'ChangeProjection'" << std::endl;
+
     if (mode > 1)
         return;
 
@@ -261,27 +291,57 @@ void Application::ChangeProjection(unsigned int mode)
 
 void Application::ChangeVision(unsigned int mode)
 {
+    std::cout << "Entered in function 'ChangeVision'" << std::endl;
+
     switch (mode)
     {
-    case 0:
+    case 0: // Gradient
+        for (auto mainActor : mainActors)
+            mainActor->GetMapper()->ScalarVisibilityOn();
         for (auto ctf : ctfs)
             ctf->DiscretizeOff();
         ShowIsolinesOff();
         ShowGridOff();
+        ShowLabelsOff();
         break;
-    case 1:
+    case 1: // Discrete
+        for (auto mainActor : mainActors)
+            mainActor->GetMapper()->ScalarVisibilityOn();
         for (auto ctf : ctfs)
             ctf->DiscretizeOn();
         ShowIsolinesOff();
         ShowGridOff();
+        ShowLabelsOff();
         break;
-    case 2:
+    case 2: // Isolines
+        for (auto mainActor : mainActors)
+        {
+            mainActor->GetMapper()->ScalarVisibilityOff();
+            mainActor->GetProperty()->SetColor(0, 0, 0);
+        }
         ShowIsolinesOn();
         ShowGridOff();
+        ShowLabelsOff();
         break;
-    case 3:
+    case 3: // Grid
+        for (auto mainActor : mainActors)
+        {
+            mainActor->GetMapper()->ScalarVisibilityOff();
+            mainActor->GetProperty()->SetColor(0, 0, 0);
+        }
         ShowIsolinesOff();
         ShowGridOn();
+        ShowLabelsOff();
+        break;
+    case 4: // Grid with Labels
+        for (auto mainActor : mainActors)
+        {
+            mainActor->GetMapper()->ScalarVisibilityOff();
+            mainActor->GetProperty()->SetColor(0, 0, 0);
+        }
+        ShowIsolinesOff();
+        ShowGridOn();
+        ShowLabelsOn();
         break;
     default:
         return;
@@ -291,6 +351,8 @@ void Application::ChangeVision(unsigned int mode)
 
 void Application::CreateIsolines(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> renderer)
 {
+    std::cout << "Entered in function 'CreateIsolines'" << std::endl;
+
     double range[2];
     source->GetScalarRange(range);
 
@@ -313,15 +375,21 @@ void Application::CreateIsolines(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> r
     isoMapper->SetScalarRange(range);
 
     vtkNew<vtkActor> isolinesActor;
-    isolinesActor->SetObjectName("Isolines");
     isolinesActor->SetMapper(isoMapper);
     isolinesActor->GetProperty()->SetLineWidth(2);
+    
+    isolinesActor->VisibilityOff();
 
     renderer->AddActor(isolinesActor);
+
+    isolinesActors.push_back(isolinesActor);
 }
 
 void Application::CreateGrid(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> renderer)
 {
+    std::cout << "Entered in function 'CreateGrid'" << std::endl;
+
+    std::cout << "Creating Edges" << std::endl;
     vtkNew<vtkExtractEdges> extract;
     extract->SetInputData(source);
     vtkNew<vtkTubeFilter> tubes;
@@ -330,16 +398,12 @@ void Application::CreateGrid(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> rende
     tubes->SetNumberOfSides(3);
     vtkNew<vtkPolyDataMapper> mapEdges;
     mapEdges->SetInputConnection(tubes->GetOutputPort());
+    mapEdges->ScalarVisibilityOff();
     vtkNew<vtkActor> edgesActor;
-    edgesActor->SetObjectName("Edges");
     edgesActor->SetMapper(mapEdges);
-    edgesActor->GetProperty()->SetColor(colors->GetColor3d("peacock").GetData());
-    edgesActor->GetProperty()->SetSpecularColor(1, 1, 1);
-    edgesActor->GetProperty()->SetSpecular(0.3);
-    edgesActor->GetProperty()->SetSpecularPower(20);
-    edgesActor->GetProperty()->SetAmbient(0.2);
-    edgesActor->GetProperty()->SetDiffuse(0.8);
+    edgesActor->GetProperty()->SetColor(51. / 255., 161. / 255., 201. / 255.);
 
+    std::cout << "Creating Vertexes" << std::endl;
     vtkNew<vtkSphereSource> ball;
     ball->SetRadius(0.025);
     ball->SetThetaResolution(2);
@@ -349,11 +413,12 @@ void Application::CreateGrid(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> rende
     balls->SetSourceConnection(ball->GetOutputPort());
     vtkNew<vtkPolyDataMapper> mapBalls;
     mapBalls->SetInputConnection(balls->GetOutputPort());
+    mapBalls->ScalarVisibilityOff();
     vtkNew<vtkActor> VertexesActor;
-    VertexesActor->SetObjectName("Vertexes");
     VertexesActor->SetMapper(mapBalls);
-    VertexesActor->GetProperty()->SetColor(colors->GetColor3d("hot_pink").GetData());
+    VertexesActor->GetProperty()->SetColor(255. / 255., 105. / 255., 180. / 255.);
 
+    std::cout << "Creating Labels" << std::endl;
     vtkNew<vtkIdFilter> idFilter;
     idFilter->SetInputData(source);
     idFilter->PointIdsOn();
@@ -367,9 +432,7 @@ void Application::CreateGrid(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> rende
     labelMapper->SetLabelModeToLabelFieldData();
 
     vtkNew<vtkActor2D> labelsActor;
-    labelsActor->SetObjectName("Labels");
     labelsActor->SetMapper(labelMapper);
-    labelsActor->GetProperty()->SetColor(colors->GetColor3d("Yellow").GetData());
 
     renderer->AddActor(edgesActor);
     renderer->AddActor(VertexesActor);
@@ -384,60 +447,82 @@ void Application::CreateGrid(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> rende
     callback->SetCylinderSource(tubes);
 
     renderer->AddObserver(vtkCommand::StartEvent, callback);
+
+    gridActors.push_back(std::make_pair<vtkActor*, vtkActor*>(edgesActor, VertexesActor));
+    labelsActors.push_back(labelsActor);
+
+    std::cout << "Grid Created" << std::endl;
 }
 
 void Application::ShowIsolines(bool flag)
 {
-    auto renderersIter = renderWindow->GetRenderers()->NewIterator();
-    for (renderersIter->GoToFirstItem(); !renderersIter->IsDoneWithTraversal(); renderersIter->GoToNextItem())
+    std::cout << "Entered in function 'ShowIsolines'" << std::endl;
+
+    for (auto isolinesActor : isolinesActors)
     {
-        auto renderer = static_cast<vtkRenderer *>(renderersIter->GetCurrentObject());
-        auto actorsIter = renderer->GetActors()->NewIterator();
-        for (actorsIter->GoToFirstItem(); !actorsIter->IsDoneWithTraversal(); actorsIter->GoToNextItem())
-        {
-            auto actor = static_cast<vtkActor*>(actorsIter->GetCurrentObject());
-            if (actor->GetObjectName() == "Isolines")
-            {
-                if (flag)
-                    actor->VisibilityOn();
-                else
-                    actor->VisibilityOff();
-            }
-        }
+        if (flag)
+            isolinesActor->VisibilityOn();
+        else
+            isolinesActor->VisibilityOff();
     }
     renderWindow->Render();
 }
 
 void Application::ShowGrid(bool flag)
 {
-    auto renderersIter = renderWindow->GetRenderers()->NewIterator();
-    for (renderersIter->GoToFirstItem(); !renderersIter->IsDoneWithTraversal(); renderersIter->GoToNextItem())
+    std::cout << "Entered in function 'ShowGrid'" << std::endl;
+
+    for (auto gridActor : gridActors)
     {
-        auto renderer = static_cast<vtkRenderer *>(renderersIter->GetCurrentObject());
-        auto actorsIter = renderer->GetActors()->NewIterator();
-        for (actorsIter->GoToFirstItem(); !actorsIter->IsDoneWithTraversal(); actorsIter->GoToNextItem())
+        if (flag)
         {
-            auto actor = static_cast<vtkActor *>(actorsIter->GetCurrentObject());
-            if (actor->GetObjectName() == "Edges" || actor->GetObjectName() == "Vertexes")
-            {
-                if (flag)
-                    actor->VisibilityOn();
-                else
-                    actor->VisibilityOff();
-            }
+            gridActor.first->VisibilityOn();
+            gridActor.second->VisibilityOn();
         }
-        auto actors2DIter = renderer->GetActors2D()->NewIterator();
-        for (actors2DIter->GoToFirstItem(); !actors2DIter->IsDoneWithTraversal(); actors2DIter->GoToNextItem())
+        else
         {
-            auto actor2D = static_cast<vtkActor2D*>(actors2DIter->GetCurrentObject());
-            if (actor2D->GetObjectName() == "Labels")
-            {
-                if (flag)
-                    actor2D->VisibilityOn();
-                else
-                    actor2D->VisibilityOff();
-            }
+            gridActor.first->VisibilityOff();
+            gridActor.second->VisibilityOff();
         }
     }
     renderWindow->Render();
+}
+
+void Application::CreateSlider()
+{
+    std::cout << "Entered in function 'CreateSlider'" << std::endl;
+
+    vtkNew<vtkSliderRepresentation2D> sliderRepresentation;
+    sliderRepresentation->SetMinimumValue(0);
+    sliderRepresentation->SetMaximumValue(4);
+    sliderRepresentation->SetTitleText("Vision mode");
+
+    sliderRepresentation->GetPoint1Coordinate()
+        ->SetCoordinateSystemToNormalizedDisplay();
+    sliderRepresentation->GetPoint1Coordinate()->SetValue(.1, .1);
+    sliderRepresentation->GetPoint2Coordinate()
+        ->SetCoordinateSystemToNormalizedDisplay();
+    sliderRepresentation->GetPoint2Coordinate()->SetValue(.9, .1);
+
+    vtkNew<ChangeVisionSliderCallback> callback;
+    callback->app = this;
+
+    changeVisionSliderWidget = vtkSliderWidget::New();
+    changeVisionSliderWidget->SetInteractor(renderWindowInteractor);
+    changeVisionSliderWidget->SetRepresentation(sliderRepresentation);
+    changeVisionSliderWidget->AddObserver(vtkCommand::InteractionEvent, callback);
+    changeVisionSliderWidget->EnabledOn();
+}
+
+void Application::ShowLabels(bool flag)
+{
+    std::cout << "Entered in function 'ShowLabels'" << std::endl;
+
+    for (auto labelsActor : labelsActors)
+    {
+        if (flag)
+            labelsActor->VisibilityOn();
+        else
+            labelsActor->VisibilityOff();
+    }
 }

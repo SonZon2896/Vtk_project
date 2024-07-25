@@ -70,6 +70,8 @@ enum Mode {
 
 void CSV3DImporter::Update()
 {
+	std::cout << "Entered in function 'CSV3DImporter::Update'" << std::endl;
+
 	const int numOfDelimitersNodes = 30;
 
 	std::ifstream file(fileName);
@@ -140,4 +142,6 @@ void CSV3DImporter::Update()
 		lines = linesTemp;
 		polys = polysTemp;
 	}
+
+	std::cout << "Reading end" << std::endl;
 }
