@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
     //app.AddObject(cylinder->GetOutput(), false, true);
     //app.AddObject(plane->GetOutput(), true, true);
     //app.AddObject("Examples\\WP - new geom 09 01 24_+10.csv3d", false, true);
-    app.AddObject(sphere->GetOutput(), false, true); 
+    app.AddObject(sphere->GetOutput(), false, true);
 
     app.Start();
 
