@@ -17,19 +17,17 @@ private:
 	CSV3DImporter(const CSV3DImporter&) = delete;
 	void operator=(const CSV3DImporter&) = delete;
 
-	std::string fileName;
-
 	vtkSmartPointer<vtkPoints> points;
 	vtkSmartPointer<vtkCellArray> verts;
 	vtkSmartPointer<vtkCellArray> lines;
 	vtkSmartPointer<vtkCellArray> polys;
 
 public:
+	std::string fileName;
+
 	static CSV3DImporter* New();
 	vtkTypeMacro(CSV3DImporter, vtkImporter);
 
-	void SetFileName(std::string fileName) { this->fileName = fileName; }
-	std::string GetFileName() { return fileName; }
 
 	void Update();
 	vtkPoints* GetPoints() { return points; }
