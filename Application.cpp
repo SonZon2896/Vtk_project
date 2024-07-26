@@ -59,8 +59,6 @@ void Application::AddObject(std::string fileName, bool enableIsolines, bool enab
 
         vtkNew<vtkPolyData> polyData;
         polyData->SetPoints(importer->GetPoints());
-        polyData->SetVerts(importer->GetVerts());
-        polyData->SetLines(importer->GetLines());
         polyData->SetPolys(importer->GetPolys());
 
         AddObject(polyData, false, enableGrid);
