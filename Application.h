@@ -49,8 +49,11 @@
 #include <vtkLabeledDataMapper.h>
 #include <vtkDelaunay3D.h>
 #include <vtkExtractEdges.h>
+#include <vtkExtractPoints.h>
 #include <vtkTubeFilter.h>
 #include <vtkGlyph3D.h>
+#include <vtkGlyph3DMapper.h>
+#include <vtkRibbonFilter.h>
 #include <vtkRendererCollection.h>
 #include <vtkCollectionIterator.h>
 #include <vtkActorCollection.h>
@@ -91,10 +94,6 @@ class KeyPressInteractorStyle;
 
 class Application {
 private:
-	bool isolinesVisibility = true;
-	bool gridVisibility = false;
-	bool labelsVisibility = false;
-
 	json settings;
 	std::string pathToSettings;
 
@@ -132,17 +131,14 @@ public:
 	void UpdateSettings();
 
 	void ShowIsolines(bool flag);
-	void ChangeIsolines() { ShowIsolines(!isolinesVisibility); isolinesVisibility = !isolinesVisibility; }
 	void ShowIsolinesOn() { ShowIsolines(true); }
 	void ShowIsolinesOff() { ShowIsolines(false); }
 
 	void ShowGrid(bool flag);
-	void ChangeGrid() { ShowGrid(!gridVisibility); gridVisibility = !gridVisibility; }
 	void ShowGridOn() { ShowGrid(true); }
 	void ShowGridOff() { ShowGrid(false); }
 
 	void ShowLabels(bool flag);
-	void ChangeLabels() { ShowLabels(!labelsVisibility); labelsVisibility = !labelsVisibility; }
 	void ShowLabelsOn() { ShowLabels(true); }
 	void ShowLabelsOff() { ShowLabels(false); }
 

@@ -121,11 +121,22 @@ void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool
 
 void Application::Start()
 {
-    std::cout << "Entered in function 'Start'" << std::endl;
+    std::cout << "Start" << std::endl;
 
     CreateSlider();
 
+    std::cout << "Rendering with isolines and grid" << std::endl;
+
     renderWindow->Render();
+
+    ChangeVisionToGradient();
+
+    std::cout << "Start rendering without isolines and grid" << std::endl;
+
+    renderWindow->Render();
+
+    std::cout << "End rendering" << std::endl;
+
     renderWindowInteractor->Start();
 }
 
@@ -375,8 +386,6 @@ void Application::CreateIsolines(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> r
     vtkNew<vtkActor> isolinesActor;
     isolinesActor->SetMapper(isoMapper);
     isolinesActor->GetProperty()->SetLineWidth(2);
-    
-    isolinesActor->VisibilityOff();
 
     renderer->AddActor(isolinesActor);
 
@@ -390,20 +399,17 @@ void Application::CreateGrid(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> rende
     std::cout << "Creating Edges" << std::endl;
     vtkNew<vtkExtractEdges> extract;
     extract->SetInputData(source);
-    vtkNew<vtkTubeFilter> tubes;
-    tubes->SetInputConnection(extract->GetOutputPort());
-    tubes->SetRadius(0.01);
-    tubes->SetNumberOfSides(3);
     vtkNew<vtkPolyDataMapper> mapEdges;
-    mapEdges->SetInputConnection(tubes->GetOutputPort());
+    mapEdges->SetInputConnection(extract->GetOutputPort());
     mapEdges->ScalarVisibilityOff();
     vtkNew<vtkActor> edgesActor;
     edgesActor->SetMapper(mapEdges);
     edgesActor->GetProperty()->SetColor(51. / 255., 161. / 255., 201. / 255.);
 
     std::cout << "Creating Vertexes" << std::endl;
+
     vtkNew<vtkSphereSource> ball;
-    ball->SetRadius(0.025);
+    ball->SetRadius(0.001);
     ball->SetThetaResolution(2);
     ball->SetPhiResolution(2);
     vtkNew<vtkGlyph3D> balls;
@@ -436,15 +442,10 @@ void Application::CreateGrid(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> rende
     renderer->AddActor(VertexesActor);
     renderer->AddActor(labelsActor);
 
-    edgesActor->VisibilityOff();
-    VertexesActor->VisibilityOff();
-    labelsActor->VisibilityOff();
+    //vtkNew<UpdateMeshGridCallback> callback;
+    //callback->SetSphereSource(balls);
 
-    vtkNew<UpdateMeshGridCallback> callback;
-    callback->SetSphereSource(ball);
-    callback->SetCylinderSource(tubes);
-
-    renderer->AddObserver(vtkCommand::StartEvent, callback);
+    //renderer->AddObserver(vtkCommand::StartEvent, callback);
 
     gridActors.push_back(std::make_pair<vtkActor*, vtkActor*>(edgesActor, VertexesActor));
     labelsActors.push_back(labelsActor);
@@ -523,4 +524,4 @@ void Application::ShowLabels(bool flag)
         else
             labelsActor->VisibilityOff();
     }
-}
+} 

@@ -6,28 +6,20 @@
 #include <vtkCylinderSource.h>
 #include <vtkTubeFilter.h>
 #include <vtkCallbackCommand.h>
+#include <vtkRibbonFilter.h>
+#include <vtkGlyph3D.h>
 
 class UpdateMeshGridCallback : public vtkCallbackCommand
 {
 private:
-    vtkSmartPointer<vtkSphereSource> sphereSource;
-    vtkSmartPointer<vtkTubeFilter> cylinderSource;
-
-    double sphereScale = .003;
-    double cylinderScale = .0003;
+    vtkSmartPointer<vtkGlyph3D> spheres;
 
 public:
+    double sphereScale = .01;
+
     static UpdateMeshGridCallback* New() { return new UpdateMeshGridCallback; }
     
     virtual void Execute(vtkObject* caller, unsigned long, void*);
 
-    void SetSphereSource(vtkSphereSource* sphereSrc) { sphereSource = sphereSrc; }
-    auto GetSphereSource() { return sphereSource; }
-    void SetCylinderSource(vtkTubeFilter* cylinderSrc) { cylinderSource = cylinderSrc; }
-    auto GetCylinderSource() { return cylinderSource; }
-    void SetSphereScale(double scale) { sphereScale = scale; }
-    auto GetSphereScale() { return sphereScale; }
-    void SetCylinderScale(double scale) { cylinderScale = scale; }
-    auto GetCylinederScale() { return cylinderScale; }
-
+    void SetSphereSource(vtkGlyph3D* spheresGlyph) { spheres = spheresGlyph; }
 };
