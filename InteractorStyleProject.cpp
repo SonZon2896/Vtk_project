@@ -22,10 +22,10 @@ void InteractorStyleProject::SetRenderer(vtkRenderer* ren)
 
 void InteractorStyleProject::OnLeftButtonUp()
 {
-	if (enableSelection)
+	if (enableSelection == true)
 	{
 		int x, y;
-		Interactor->GetEventPosition(x, y);
+		this->interactor->GetEventPosition(x, y);
 
 		pointPicker->Pick(x, y, 0, renderer);
 

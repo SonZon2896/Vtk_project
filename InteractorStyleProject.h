@@ -23,6 +23,7 @@ class InteractorStyleProject : public vtkInteractorStyleTrackballCamera
 private:
 	vtkSP<vtkPointPicker> pointPicker;
 	vtkSP<vtkRenderer> renderer;
+	vtkSP<vtkRenderWindowInteractor> interactor;
 	vtkIdType selectedPoint;
 
 	vtkSP<vtkTextProperty> textProperty;
@@ -34,15 +35,17 @@ public:
 	bool enableSelection = false;
 
 	static vtkStandardNewMacro(InteractorStyleProject)
+
 	InteractorStyleProject();
 	void SetRenderer(vtkRenderer* ren);
+	void SetWindowInteractor(vtkRenderWindowInteractor* rwi) { interactor = rwi; }
 
-	void OnLeftButtonUp() override;
-	void OnLeftButtonDown() override;
-	void OnRightButtonUp() override;
-	void OnRightButtonDown() override;
-	void OnMouseWheelForward() override;
-	void OnMouseWheelBackward() override;
-	void OnMiddleButtonUp() override;
-	void OnMiddleButtonDown() override;
+	virtual void OnLeftButtonUp() override;
+	virtual void OnLeftButtonDown() override;
+	virtual void OnRightButtonUp() override;
+	virtual void OnRightButtonDown() override;
+	virtual void OnMouseWheelForward() override;
+	virtual void OnMouseWheelBackward() override;
+	virtual void OnMiddleButtonUp() override;
+	virtual void OnMiddleButtonDown() override;
 };

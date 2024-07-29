@@ -11,7 +11,9 @@ Application::Application()
 
     interactorStyle = InteractorStyleProject::New();
     interactorStyle->SetRenderer(renderer);
+    interactorStyle->SetWindowInteractor(renderWindowInteractor);
     renderWindowInteractor->SetInteractorStyle(interactorStyle);
+
 
     renderer->SetBackground(0., 127., 127.);
     renderer->UseHiddenLineRemovalOn();
