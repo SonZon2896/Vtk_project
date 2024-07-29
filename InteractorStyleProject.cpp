@@ -2,12 +2,9 @@
 
 InteractorStyleProject::InteractorStyleProject()
 {
-	pointPicker = vtkPointPicker::New();
 	textProperty = vtkTextProperty::New();
 	textMapper = vtkTextMapper::New();
 	textActor = vtkActor2D::New();
-
-	pointPicker->SetTolerance(.003);
 
 	textMapper->SetTextProperty(textProperty);
 	textActor->SetMapper(textMapper);
@@ -20,6 +17,15 @@ void InteractorStyleProject::SetRenderer(vtkRenderer* ren)
 	renderer->AddActor(textActor);
 }
 
+void InteractorStyleProject::SetWindowInteractor(vtkRenderWindowInteractor* rwi)
+{
+	interactor = rwi;
+
+	vtkNew<vtkPointPicker> picker;
+	picker->SetTolerance(.003);
+	interactor->SetPicker(picker);
+}
+
 void InteractorStyleProject::OnLeftButtonUp()
 {
 	if (enableSelection == true)
@@ -27,11 +33,13 @@ void InteractorStyleProject::OnLeftButtonUp()
 		int x, y;
 		this->interactor->GetEventPosition(x, y);
 
-		pointPicker->Pick(x, y, 0, renderer);
+		vtkPointPicker* picker = dynamic_cast<vtkPointPicker *>(interactor->GetPicker());
 
-		if (pointPicker->GetPointId() >= 0)
+		picker->Pick(x, y, 0, renderer);
+
+		if (picker->GetPointId() >= 0)
 		{
-			selectedPoint = pointPicker->GetPointId();
+			selectedPoint = picker->GetPointId();
 
 			textMapper->SetInput(std::to_string(selectedPoint).c_str());
 			textActor->SetPosition(x, y);

@@ -2,6 +2,7 @@
 
 #include <vtkPointPicker.h>
 #include <vtkRenderWindowInteractor.h>
+#include <vtkInteractorObserver.h>
 #include <vtkRenderWIndow.h>
 #include <vtkRenderer.h>
 #include <vtkRendererCollection.h>
@@ -21,24 +22,28 @@
 class InteractorStyleProject : public vtkInteractorStyleTrackballCamera
 {
 private:
-	vtkSP<vtkPointPicker> pointPicker;
-	vtkSP<vtkRenderer> renderer;
-	vtkSP<vtkRenderWindowInteractor> interactor;
+	// Эта строчка нужна только для того чтобы релиз версия работала
+	// Ни в коем случае не удалять
+	vtkPointPicker *pointPicker;
+
+	vtkRenderer *renderer;
+	vtkRenderWindowInteractor *interactor;
 	vtkIdType selectedPoint;
 
-	vtkSP<vtkTextProperty> textProperty;
-	vtkSP<vtkTextMapper> textMapper;
-	vtkSP<vtkActor2D> textActor;
+	vtkTextProperty *textProperty;
+	vtkTextMapper *textMapper;
+	vtkActor2D *textActor;
+
+	InteractorStyleProject();
 
 public:
-	vtkSP<vtkPolyData> polyData;
+	vtkPolyData *polyData;
 	bool enableSelection = false;
 
 	static vtkStandardNewMacro(InteractorStyleProject)
 
-	InteractorStyleProject();
 	void SetRenderer(vtkRenderer* ren);
-	void SetWindowInteractor(vtkRenderWindowInteractor* rwi) { interactor = rwi; }
+	void SetWindowInteractor(vtkRenderWindowInteractor* rwi);
 
 	virtual void OnLeftButtonUp() override;
 	virtual void OnLeftButtonDown() override;
