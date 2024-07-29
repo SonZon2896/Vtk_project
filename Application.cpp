@@ -5,12 +5,18 @@ Application::Application()
     std::cout << "Initialize Application" << std::endl;
 
     colors = vtkNamedColors::New();
+    renderer = vtkRenderer::New();
     renderWindow = vtkRenderWindow::New();
     renderWindowInteractor = vtkRenderWindowInteractor::New();
 
-    vtkNew<vtkInteractorStyleTrackballCamera> style;
-    renderWindowInteractor->SetInteractorStyle(style);
+    interactorStyle = InteractorStyleProject::New();
+    interactorStyle->SetRenderer(renderer);
+    renderWindowInteractor->SetInteractorStyle(interactorStyle);
 
+    renderer->SetBackground(0., 127., 127.);
+    renderer->UseHiddenLineRemovalOn();
+
+    renderWindow->AddRenderer(renderer);
     renderWindow->SetSize(1280, 800);
     renderWindow->SetWindowName("Vtk Project");
     renderWindowInteractor->SetRenderWindow(renderWindow);
@@ -95,23 +101,19 @@ void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool
     vtkNew<vtkActor> actor;
     actor->SetMapper(mapper);
 
-    vtkNew<vtkRenderer> renderer;
     renderer->AddActor(actor);
-    renderer->SetBackground(0., 127., 127.);
-    renderer->UseHiddenLineRemovalOn();
 
     if (enableIsolines == true)
     {
-        CreateIsolines(source, renderer);
+        CreateIsolines(source);
     }
     if (enableGrid == true)
     {
-        CreateGrid(source, renderer);
+        CreateGrid(source);
     }
 
-    renderWindow->AddRenderer(renderer);
-
     mainActors.push_back(actor);
+    ((vtkSP<InteractorStyleProject>)(interactorStyle))->polyData = source;
 
     std::cout << "Object Created" << std::endl;
 }
@@ -295,6 +297,7 @@ void Application::ChangeVision(unsigned int mode)
         ShowIsolinesOff();
         ShowGridOff();
         ShowLabelsOff();
+        interactorStyle->enableSelection = false;
         break;
     case 1: // Discrete
         for (auto mainActor : mainActors)
@@ -304,6 +307,7 @@ void Application::ChangeVision(unsigned int mode)
         ShowIsolinesOff();
         ShowGridOff();
         ShowLabelsOff();
+        interactorStyle->enableSelection = false;
         break;
     case 2: // Isolines
         for (auto mainActor : mainActors)
@@ -314,6 +318,7 @@ void Application::ChangeVision(unsigned int mode)
         ShowIsolinesOn();
         ShowGridOff();
         ShowLabelsOff();
+        interactorStyle->enableSelection = false;
         break;
     case 3: // Grid
         for (auto mainActor : mainActors)
@@ -324,6 +329,7 @@ void Application::ChangeVision(unsigned int mode)
         ShowIsolinesOff();
         ShowGridOn();
         ShowLabelsOff();
+        interactorStyle->enableSelection = true;
         break;
     case 4: // Grid with Labels
         for (auto mainActor : mainActors)
@@ -334,6 +340,7 @@ void Application::ChangeVision(unsigned int mode)
         ShowIsolinesOff();
         ShowGridOn();
         ShowLabelsOn();
+        interactorStyle->enableSelection = false;
         break;
     default:
         return;
@@ -341,7 +348,7 @@ void Application::ChangeVision(unsigned int mode)
     renderWindow->Render();
 }
 
-void Application::CreateIsolines(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> renderer)
+void Application::CreateIsolines(vtkSP<vtkPolyData> source)
 {
     std::cout << "Creating isolines" << std::endl;
 
@@ -377,7 +384,7 @@ void Application::CreateIsolines(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> r
     std::cout << "created isolines" << std::endl;
 }
 
-void Application::CreateGrid(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> renderer)
+void Application::CreateGrid(vtkSP<vtkPolyData> source)
 {
     std::cout << "Creating Grid" << std::endl;
 

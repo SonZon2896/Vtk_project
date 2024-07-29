@@ -78,6 +78,7 @@
 #include "Interactor.h"
 #include "CSV3DImporter.h"
 #include "ChangeVisionSliderCallback.h"
+#include "InteractorStyleProject.h"
 
 #include <chrono>
 #include <thread>
@@ -104,16 +105,18 @@ private:
 	std::vector<vtkSP<vtkActor2D>> labelsActors;
 
 	vtkSP<vtkNamedColors> colors;
+	vtkSP<vtkRenderer> renderer;
 	vtkSP<vtkRenderWindow> renderWindow;
 	vtkSP<vtkRenderWindowInteractor> renderWindowInteractor;
+	vtkSP<InteractorStyleProject> interactorStyle;
 	vtkSP<vtkSliderWidget> changeVisionSliderWidget;
 
 	void UpdateJson();
 	vtkSP<vtkDCTF> GetCTF(double minValue, double maxValue);
 	inline vtkSP<vtkDCTF> GetCTF(double* range) { return GetCTF(range[0], range[1]); }
 
-	void CreateIsolines(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> renderer);
-	void CreateGrid(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> renderer);
+	void CreateIsolines(vtkSP<vtkPolyData> source);
+	void CreateGrid(vtkSP<vtkPolyData> source);
 
 	void CreateSlider();
 public:

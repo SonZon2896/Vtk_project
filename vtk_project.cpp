@@ -21,8 +21,8 @@ int main(int argc, char* argv[])
     if (argc < 2)
     {
         vtkNew<vtkSphereSource> sphere;
-        sphere->SetPhiResolution(150);
-        sphere->SetThetaResolution(150);
+        sphere->SetPhiResolution(25);
+        sphere->SetThetaResolution(25);
         sphere->Update();
 
         app.AddObject(sphere->GetOutput(), false, true);
