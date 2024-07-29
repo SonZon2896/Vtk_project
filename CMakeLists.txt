@@ -37,7 +37,7 @@ add_executable(VTK_Project MACOSX_BUNDLE
 	"Application.cpp"
 	"Interactor.cpp"
 	"CSV3DImporter.cpp"
-	"UpdateMeshGridCallback.cpp"
+	
 	"ChangeVisionSliderCallback.cpp")
   target_link_libraries(VTK_Project PRIVATE ${VTK_LIBRARIES}
 )

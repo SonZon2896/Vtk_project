@@ -65,6 +65,7 @@
 #include <vtkSelectVisiblePoints.h>
 #include <vtkTexturedButtonRepresentation2D.h>
 #include <vtkButtonWidget.h>
+#include <vtkVertexGlyphFilter.h>
 #include <vtkStdString.h>
 #include <vtkIdFilter.h>
 #include <vtkProperty2D.h>
@@ -76,7 +77,6 @@
 #include <functional>
 #include "Interactor.h"
 #include "CSV3DImporter.h"
-#include "UpdateMeshGridCallback.h"
 #include "ChangeVisionSliderCallback.h"
 
 #include <chrono>

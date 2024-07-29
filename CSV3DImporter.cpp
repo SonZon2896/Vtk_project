@@ -70,8 +70,6 @@ enum Mode {
 
 void CSV3DImporter::Update()
 {
-	std::cout << "Entered in function 'CSV3DImporter::Update'" << std::endl;
-
 	std::ifstream file(fileName);
 	std::string fileString;
 	if (file.is_open())

@@ -18,8 +18,6 @@ Application::Application()
 
 void Application::AddSettings(std::string filename)
 {
-    std::cout << "Entered in function 'AddSettings'" << std::endl;
-
     pathToSettings = filename;
     UpdateJson();
 }
@@ -64,12 +62,10 @@ void Application::AddObject(std::string fileName, bool enableIsolines, bool enab
         AddObject(polyData, false, enableGrid);
 
         std::cout << "File readed" << std::endl;
-        return;
     }
     else
     {
         std::cout << "File " << fileName << " not found" << std::endl;
-        return;
     }
 }
 
@@ -102,6 +98,7 @@ void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool
     vtkNew<vtkRenderer> renderer;
     renderer->AddActor(actor);
     renderer->SetBackground(0., 127., 127.);
+    renderer->UseHiddenLineRemovalOn();
 
     if (enableIsolines == true)
     {
@@ -142,16 +139,12 @@ void Application::Start()
 
 void Application::OffScreenRendering()
 {
-    std::cout << "Entered in function 'OffScreenRendering'" << std::endl;
-
     renderWindow->OffScreenRenderingOn();
     renderWindow->Render();
 }
 
 void Application::SaveScreen(std::string fileName)
 {
-    std::cout << "Entered in function 'SaveScreen'" << std::endl;
-
     bool rgba = true;
     if (!fileName.empty())
     {
@@ -223,16 +216,12 @@ void Application::SaveScreen(std::string fileName)
 
 void Application::UpdateJson()
 {
-    std::cout << "Entered in function 'UpdateJson'" << std::endl;
-
     std::ifstream f(pathToSettings);
     settings = json::parse(f);
 }
 
 vtkSP<vtkDCTF> Application::GetCTF(double minValue, double maxValue)
 {
-    std::cout << "Entered in function 'GetCTF'" << std::endl;
-
     vtkNew<vtkDiscretizableColorTransferFunction> ctf;
     double oneRange = (maxValue - minValue) / 8;
 
@@ -264,8 +253,6 @@ vtkSP<vtkDCTF> Application::GetCTF(double minValue, double maxValue)
 
 void Application::UpdateSettings()
 {
-    std::cout << "Entered in function 'UpdateSettings'" << std::endl;
-
     if (pathToSettings.empty())
         return;
 
@@ -278,8 +265,6 @@ void Application::UpdateSettings()
 
 void Application::ChangeProjection(unsigned int mode)
 {
-    std::cout << "Entered in function 'ChangeProjection'" << std::endl;
-
     if (mode > 1)
         return;
 
@@ -300,8 +285,6 @@ void Application::ChangeProjection(unsigned int mode)
 
 void Application::ChangeVision(unsigned int mode)
 {
-    std::cout << "Entered in function 'ChangeVision'" << std::endl;
-
     switch (mode)
     {
     case 0: // Gradient
@@ -360,7 +343,7 @@ void Application::ChangeVision(unsigned int mode)
 
 void Application::CreateIsolines(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> renderer)
 {
-    std::cout << "Entered in function 'CreateIsolines'" << std::endl;
+    std::cout << "Creating isolines" << std::endl;
 
     double range[2];
     source->GetScalarRange(range);
@@ -390,13 +373,16 @@ void Application::CreateIsolines(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> r
     renderer->AddActor(isolinesActor);
 
     isolinesActors.push_back(isolinesActor);
+
+    std::cout << "created isolines" << std::endl;
 }
 
 void Application::CreateGrid(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> renderer)
 {
-    std::cout << "Entered in function 'CreateGrid'" << std::endl;
+    std::cout << "Creating Grid" << std::endl;
 
     std::cout << "Creating Edges" << std::endl;
+
     vtkNew<vtkExtractEdges> extract;
     extract->SetInputData(source);
     vtkNew<vtkPolyDataMapper> mapEdges;
@@ -408,21 +394,20 @@ void Application::CreateGrid(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> rende
 
     std::cout << "Creating Vertexes" << std::endl;
 
-    vtkNew<vtkSphereSource> ball;
-    ball->SetRadius(0.001);
-    ball->SetThetaResolution(2);
-    ball->SetPhiResolution(2);
-    vtkNew<vtkGlyph3D> balls;
-    balls->SetInputData(source);
-    balls->SetSourceConnection(ball->GetOutputPort());
+    vtkNew<vtkVertexGlyphFilter> glyphFilter;
+    glyphFilter->SetInputData(source);
+    glyphFilter->Update();
     vtkNew<vtkPolyDataMapper> mapBalls;
-    mapBalls->SetInputConnection(balls->GetOutputPort());
+    mapBalls->SetInputConnection(glyphFilter->GetOutputPort());
     mapBalls->ScalarVisibilityOff();
     vtkNew<vtkActor> VertexesActor;
     VertexesActor->SetMapper(mapBalls);
     VertexesActor->GetProperty()->SetColor(255. / 255., 105. / 255., 180. / 255.);
+    VertexesActor->GetProperty()->SetPointSize(10);
+    VertexesActor->GetProperty()->RenderPointsAsSpheresOn();
 
     std::cout << "Creating Labels" << std::endl;
+
     vtkNew<vtkIdFilter> idFilter;
     idFilter->SetInputData(source);
     idFilter->PointIdsOn();
@@ -442,11 +427,6 @@ void Application::CreateGrid(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> rende
     renderer->AddActor(VertexesActor);
     renderer->AddActor(labelsActor);
 
-    //vtkNew<UpdateMeshGridCallback> callback;
-    //callback->SetSphereSource(balls);
-
-    //renderer->AddObserver(vtkCommand::StartEvent, callback);
-
     gridActors.push_back(std::make_pair<vtkActor*, vtkActor*>(edgesActor, VertexesActor));
     labelsActors.push_back(labelsActor);
 
@@ -455,8 +435,6 @@ void Application::CreateGrid(vtkSP<vtkPolyData> source, vtkSP<vtkRenderer> rende
 
 void Application::ShowIsolines(bool flag)
 {
-    std::cout << "Entered in function 'ShowIsolines'" << std::endl;
-
     for (auto isolinesActor : isolinesActors)
     {
         if (flag)
@@ -469,8 +447,6 @@ void Application::ShowIsolines(bool flag)
 
 void Application::ShowGrid(bool flag)
 {
-    std::cout << "Entered in function 'ShowGrid'" << std::endl;
-
     for (auto gridActor : gridActors)
     {
         if (flag)
@@ -489,8 +465,6 @@ void Application::ShowGrid(bool flag)
 
 void Application::CreateSlider()
 {
-    std::cout << "Entered in function 'CreateSlider'" << std::endl;
-
     vtkNew<vtkSliderRepresentation2D> sliderRepresentation;
     sliderRepresentation->SetMinimumValue(0);
     sliderRepresentation->SetMaximumValue(4);
@@ -515,8 +489,6 @@ void Application::CreateSlider()
 
 void Application::ShowLabels(bool flag)
 {
-    std::cout << "Entered in function 'ShowLabels'" << std::endl;
-
     for (auto labelsActor : labelsActors)
     {
         if (flag)
