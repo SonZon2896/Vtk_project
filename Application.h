@@ -110,8 +110,11 @@ private:
 	vtkSP<vtkRenderWindowInteractor> renderWindowInteractor;
 	vtkSP<InteractorStyleProject> interactorStyle;
 	vtkSP<vtkSliderWidget> changeVisionSliderWidget;
+	vtkSP<vtkTextMapper> fpsTextMapper;
+	vtkSP<vtkActor2D> fpsTextActor;
 
 	void UpdateJson();
+
 	vtkSP<vtkDCTF> GetCTF(double minValue, double maxValue);
 	inline vtkSP<vtkDCTF> GetCTF(double* range) { return GetCTF(range[0], range[1]); }
 
@@ -119,6 +122,8 @@ private:
 	void CreateGrid(vtkSP<vtkPolyData> source);
 
 	void CreateSlider();
+	void CreateFPSCounter();
+
 public:
 	Application();
 

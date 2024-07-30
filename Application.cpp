@@ -121,6 +121,7 @@ void Application::Start()
     std::cout << "Start" << std::endl;
 
     CreateSlider();
+    CreateFPSCounter();
 
     std::cout << "Rendering with isolines and grid" << std::endl;
 
@@ -490,6 +491,37 @@ void Application::CreateSlider()
     changeVisionSliderWidget->SetRepresentation(sliderRepresentation);
     changeVisionSliderWidget->AddObserver(vtkCommand::InteractionEvent, callback);
     changeVisionSliderWidget->EnabledOn();
+}
+
+void FPSCounterCallback(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
+{
+    vtkRenderer* renderer = static_cast<vtkRenderer*>(caller);
+    vtkTextMapper* fpsTextMapper = static_cast<vtkTextMapper*>(clientData);
+
+    double time = renderer->GetLastRenderTimeInSeconds(); // Get the time required for the last rendering call
+    int fps = 1.0 / time;
+
+    fpsTextMapper->SetInput(("FPS: " + std::to_string(fps)).c_str());
+}
+
+void Application::CreateFPSCounter()
+{
+    fpsTextMapper = vtkTextMapper::New();
+    fpsTextActor = vtkActor2D::New();
+
+    vtkNew<vtkTextProperty> textProperty;
+    textProperty->BoldOn();
+    textProperty->SetFontSize(25);
+
+    fpsTextMapper->SetTextProperty(textProperty);
+    fpsTextActor->SetMapper(fpsTextMapper);
+    fpsTextActor->SetPosition(25, 25);
+    renderer->AddActor(fpsTextActor);
+
+    vtkNew<vtkCallbackCommand> callback;
+    callback->SetCallback(FPSCounterCallback);
+    callback->SetClientData(fpsTextMapper);
+    renderer->AddObserver(vtkCommand::EndEvent, callback);
 }
 
 void Application::ShowLabels(bool flag)
