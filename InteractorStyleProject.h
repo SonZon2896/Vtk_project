@@ -1,10 +1,13 @@
 #pragma once
 
+#include <vtkWorldPointPicker.h>
 #include <vtkPointPicker.h>
+#include <vtkPicker.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkInteractorObserver.h>
 #include <vtkRenderWIndow.h>
 #include <vtkRenderer.h>
+#include <vtkCamera.h>
 #include <vtkRendererCollection.h>
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkObjectFactory.h>
@@ -15,6 +18,7 @@
 #include <vtkActor2D.h>
 #include <vtkTextProperty.h>
 #include <vtkTextMapper.h>
+#include <vtkMath.h>
 #include <string>
 
 #define vtkSP vtkSmartPointer
@@ -24,17 +28,22 @@ class InteractorStyleProject : public vtkInteractorStyleTrackballCamera
 private:
 	// Эта строчка нужна только для того чтобы релиз версия работала
 	// Ни в коем случае не удалять
-	vtkPointPicker *pointPicker;
+	void *nothing;
 
 	vtkRenderer *renderer;
 	vtkRenderWindowInteractor *interactor;
 	vtkIdType selectedPoint;
 
-	vtkTextProperty *textProperty;
-	vtkTextMapper *textMapper;
-	vtkActor2D *textActor;
+	vtkSP<vtkTextProperty> textProperty;
+	vtkSP<vtkTextMapper> textMapper;
+	vtkSP<vtkActor2D> textActor;
+
+	vtkSP<vtkPointPicker> pointPicker;
+	vtkSP<vtkWorldPointPicker> worldPicker;
 
 	InteractorStyleProject();
+
+	void PickPoint();
 
 public:
 	vtkPolyData *polyData;

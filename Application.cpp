@@ -8,12 +8,7 @@ Application::Application()
     renderer = vtkRenderer::New();
     renderWindow = vtkRenderWindow::New();
     renderWindowInteractor = vtkRenderWindowInteractor::New();
-
     interactorStyle = InteractorStyleProject::New();
-    interactorStyle->SetRenderer(renderer);
-    interactorStyle->SetWindowInteractor(renderWindowInteractor);
-    renderWindowInteractor->SetInteractorStyle(interactorStyle);
-
 
     renderer->SetBackground(0., 127., 127.);
     renderer->UseHiddenLineRemovalOn();
@@ -22,6 +17,8 @@ Application::Application()
     renderWindow->SetSize(1280, 800);
     renderWindow->SetWindowName("Vtk Project");
     renderWindowInteractor->SetRenderWindow(renderWindow);
+    interactorStyle->SetWindowInteractor(renderWindowInteractor);
+    interactorStyle->SetRenderer(renderer);
 }
 
 void Application::AddSettings(std::string filename)
@@ -115,7 +112,6 @@ void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool
     }
 
     mainActors.push_back(actor);
-    ((vtkSP<InteractorStyleProject>)(interactorStyle))->polyData = source;
 
     std::cout << "Object Created" << std::endl;
 }

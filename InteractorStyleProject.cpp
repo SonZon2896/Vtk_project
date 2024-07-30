@@ -6,6 +6,11 @@ InteractorStyleProject::InteractorStyleProject()
 	textMapper = vtkTextMapper::New();
 	textActor = vtkActor2D::New();
 
+	pointPicker = vtkPointPicker::New();
+	worldPicker = vtkWorldPointPicker::New();
+
+	pointPicker->SetTolerance(.003);
+
 	textMapper->SetTextProperty(textProperty);
 	textActor->SetMapper(textMapper);
 	textActor->VisibilityOff();
@@ -20,32 +25,39 @@ void InteractorStyleProject::SetRenderer(vtkRenderer* ren)
 void InteractorStyleProject::SetWindowInteractor(vtkRenderWindowInteractor* rwi)
 {
 	interactor = rwi;
-
-	vtkNew<vtkPointPicker> picker;
-	picker->SetTolerance(.003);
-	interactor->SetPicker(picker);
+	interactor->SetInteractorStyle(this);
 }
 
-void InteractorStyleProject::OnLeftButtonUp()
+void InteractorStyleProject::PickPoint()
 {
 	if (enableSelection == true)
 	{
 		int x, y;
-		this->interactor->GetEventPosition(x, y);
+		interactor->GetEventPosition(x, y);
 
-		vtkPointPicker* picker = dynamic_cast<vtkPointPicker *>(interactor->GetPicker());
+		pointPicker->Pick(x, y, 0, renderer);
+		worldPicker->Pick(x, y, 0, renderer);
 
-		picker->Pick(x, y, 0, renderer);
+		double* pickerPos = pointPicker->GetPickPosition();
+		double* worldPickerPos = worldPicker->GetPickPosition();
+		double* cameraPos = renderer->GetActiveCamera()->GetPosition();
+		double pickersDist = vtkMath::Distance2BetweenPoints(pickerPos, worldPickerPos);
+		double cameraDist = vtkMath::Distance2BetweenPoints(cameraPos, worldPickerPos);
 
-		if (picker->GetPointId() >= 0)
+		if (pointPicker->GetPointId() >= 0 && cameraDist * 0.003 > pickersDist)
 		{
-			selectedPoint = picker->GetPointId();
+			selectedPoint = pointPicker->GetPointId();
 
 			textMapper->SetInput(std::to_string(selectedPoint).c_str());
 			textActor->SetPosition(x, y);
 			textActor->VisibilityOn();
 		}
 	}
+}
+
+void InteractorStyleProject::OnLeftButtonUp()
+{
+	PickPoint();
 
 	vtkInteractorStyleTrackballCamera::OnLeftButtonUp();
 }
