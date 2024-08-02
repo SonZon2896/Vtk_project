@@ -295,7 +295,6 @@ void Application::ChangeVision(unsigned int mode)
             ctf->DiscretizeOff();
         ShowIsolinesOff();
         ShowGridOff();
-        ShowLabelsOff();
         interactorStyle->enableSelection = false;
         break;
     case 1: // Discrete
@@ -305,7 +304,6 @@ void Application::ChangeVision(unsigned int mode)
             ctf->DiscretizeOn();
         ShowIsolinesOff();
         ShowGridOff();
-        ShowLabelsOff();
         interactorStyle->enableSelection = false;
         break;
     case 2: // Isolines
@@ -316,7 +314,6 @@ void Application::ChangeVision(unsigned int mode)
         }
         ShowIsolinesOn();
         ShowGridOff();
-        ShowLabelsOff();
         interactorStyle->enableSelection = false;
         break;
     case 3: // Grid
@@ -327,19 +324,7 @@ void Application::ChangeVision(unsigned int mode)
         }
         ShowIsolinesOff();
         ShowGridOn();
-        ShowLabelsOff();
         interactorStyle->enableSelection = true;
-        break;
-    case 4: // Grid with Labels
-        for (auto mainActor : mainActors)
-        {
-            mainActor->GetMapper()->ScalarVisibilityOff();
-            mainActor->GetProperty()->SetColor(0, 0, 0);
-        }
-        ShowIsolinesOff();
-        ShowGridOn();
-        ShowLabelsOn();
-        interactorStyle->enableSelection = false;
         break;
     default:
         return;
@@ -412,29 +397,10 @@ void Application::CreateGrid(vtkSP<vtkPolyData> source)
     VertexesActor->GetProperty()->SetPointSize(10);
     VertexesActor->GetProperty()->RenderPointsAsSpheresOn();
 
-    std::cout << "Creating Labels" << std::endl;
-
-    vtkNew<vtkIdFilter> idFilter;
-    idFilter->SetInputData(source);
-    idFilter->PointIdsOn();
-
-    vtkNew<vtkSelectVisiblePoints> visiblePoints;
-    visiblePoints->SetInputConnection(idFilter->GetOutputPort());
-    visiblePoints->SetRenderer(renderer);
-
-    vtkNew<vtkLabeledDataMapper> labelMapper;
-    labelMapper->SetInputConnection(visiblePoints->GetOutputPort());
-    labelMapper->SetLabelModeToLabelFieldData();
-
-    vtkNew<vtkActor2D> labelsActor;
-    labelsActor->SetMapper(labelMapper);
-
     renderer->AddActor(edgesActor);
     renderer->AddActor(VertexesActor);
-    renderer->AddActor(labelsActor);
 
     gridActors.push_back(std::make_pair<vtkActor*, vtkActor*>(edgesActor, VertexesActor));
-    labelsActors.push_back(labelsActor);
 
     std::cout << "Grid Created" << std::endl;
 }
@@ -473,7 +439,7 @@ void Application::CreateSlider()
 {
     vtkNew<vtkSliderRepresentation2D> sliderRepresentation;
     sliderRepresentation->SetMinimumValue(0);
-    sliderRepresentation->SetMaximumValue(4);
+    sliderRepresentation->SetMaximumValue(3);
     sliderRepresentation->SetTitleText("Vision mode");
 
     sliderRepresentation->GetPoint1Coordinate()
@@ -523,14 +489,3 @@ void Application::CreateFPSCounter()
     callback->SetClientData(fpsTextMapper);
     renderer->AddObserver(vtkCommand::EndEvent, callback);
 }
-
-void Application::ShowLabels(bool flag)
-{
-    for (auto labelsActor : labelsActors)
-    {
-        if (flag)
-            labelsActor->VisibilityOn();
-        else
-            labelsActor->VisibilityOff();
-    }
-} 

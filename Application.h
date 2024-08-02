@@ -102,7 +102,6 @@ private:
 	std::vector<vtkSP<vtkActor>> mainActors;
 	std::vector<vtkSP<vtkActor>> isolinesActors;
 	std::vector<std::pair<vtkSP<vtkActor>, vtkSP<vtkActor>>> gridActors;
-	std::vector<vtkSP<vtkActor2D>> labelsActors;
 
 	vtkSP<vtkNamedColors> colors;
 	vtkSP<vtkRenderer> renderer;
@@ -145,10 +144,6 @@ public:
 	void ShowGrid(bool flag);
 	void ShowGridOn() { ShowGrid(true); }
 	void ShowGridOff() { ShowGrid(false); }
-
-	void ShowLabels(bool flag);
-	void ShowLabelsOn() { ShowLabels(true); }
-	void ShowLabelsOff() { ShowLabels(false); }
 
 	void ChangeProjection(unsigned int mode);
 	void ChangeProjectionToParallel() { ChangeProjection(0); }
