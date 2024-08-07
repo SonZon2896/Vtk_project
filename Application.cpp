@@ -78,34 +78,48 @@ void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool
 {
     std::cout << "Adding Object" << std::endl;
 
+    //std::cout << "scalars: ";
+    //std::cout << source->GetPointData()->GetScalars()->GetNumberOfValues();
+    //source->GetPointData()->GetScalars()->PrintValues(std::cout);
+
     auto bounds = source->GetBounds();
-
-    vtkNew<vtkElevationFilter> elevationFilter;
-    elevationFilter->SetLowPoint(0, bounds[2], 0);
-    elevationFilter->SetHighPoint(0, bounds[3], 0);
-    elevationFilter->SetInputData(source);
-
-    auto ctf = GetCTF(source->GetScalarRange());
 
     vtkNew<vtkPolyDataMapper> mapper;
     if (enableIsolines == true)
+    {
+        auto ctf = GetCTF(source->GetScalarRange());
+
         mapper->SetInputData(source);
+        mapper->SetLookupTable(ctf);
+        mapper->SetColorModeToMapScalars();
+        mapper->InterpolateScalarsBeforeMappingOn();
+        mapper->SetScalarModeToUsePointData();
+        mapper->ScalarVisibilityOn();
+        mapper->UseLookupTableScalarRangeOn();
+
+        CreateIsolines(source);
+    }
     else
+    {
+        vtkNew<vtkElevationFilter> elevationFilter;
+        elevationFilter->SetLowPoint(0, bounds[2], 0);
+        elevationFilter->SetHighPoint(0, bounds[3], 0);
+        elevationFilter->SetInputData(source);
+
+        auto ctf = GetCTF(elevationFilter->GetScalarRange());
+
         mapper->SetInputConnection(elevationFilter->GetOutputPort());
-    mapper->SetLookupTable(ctf);
-    mapper->SetColorModeToMapScalars();
-    mapper->InterpolateScalarsBeforeMappingOn();
-    mapper->SetScalarModeToUsePointData();
+        mapper->SetLookupTable(ctf);
+        mapper->SetColorModeToMapScalars();
+        mapper->InterpolateScalarsBeforeMappingOn();
+        mapper->SetScalarModeToUsePointData();
+    }
 
     vtkNew<vtkActor> actor;
     actor->SetMapper(mapper);
 
     renderer->AddActor(actor);
 
-    if (enableIsolines == true)
-    {
-        CreateIsolines(source);
-    }
     if (enableGrid == true)
     {
         CreateGrid(source);
@@ -339,9 +353,16 @@ void Application::CreateIsolines(vtkSP<vtkPolyData> source)
     double range[2];
     source->GetScalarRange(range);
 
+    std::cout << "\tScalar range is: " << range[0] << ", " << range[1] << std::endl;
+
     vtkNew<vtkContourFilter> contourFilter;
     contourFilter->SetInputData(source);
-    contourFilter->GenerateValues(10, range[0], range[1]);
+    contourFilter->GenerateValues(25, range[0], range[1]);
+    contourFilter->ComputeScalarsOn();
+    contourFilter->ComputeGradientsOff();
+    contourFilter->ComputeNormalsOff();
+    contourFilter->UseScalarTreeOff();
+    contourFilter->FastModeOff();
 
     vtkNew<vtkStripper> stripper;
     stripper->SetInputConnection(contourFilter->GetOutputPort());

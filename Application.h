@@ -28,6 +28,7 @@
 #include <vtkSphereSource.h>
 #include <vtkPlaneSource.h>
 #include <vtkCubeSource.h>
+#include <vtkCellData.h>
 #include <vtkStripper.h>
 #include <vtkImageWriter.h>
 #include <vtkImageData.h>
@@ -36,6 +37,7 @@
 #include <vtkPNMWriter.h>
 #include <vtkPostScriptWriter.h>
 #include <vtkTIFFWriter.h>
+#include <vtkIndent.h>
 #include <vtkPNGWriter.h>
 #include <vtkWindowToImageFilter.h>
 #include <vtkCallbackCommand.h>
@@ -44,6 +46,7 @@
 #include <vtkMinimalStandardRandomSequence.h>
 #include <vtknlohmann/json.hpp>
 #include <vtkDoubleArray.h>
+#include <vtkFloatArray.h>
 #include <vtkPointData.h>
 #include <vtkLookupTable.h>
 #include <vtkLabeledDataMapper.h>
@@ -79,6 +82,8 @@
 #include "CSV3DImporter.h"
 #include "ChangeVisionSliderCallback.h"
 #include "InteractorStyleProject.h"
+
+#include <vtkLabeledContourMapper.h>
 
 #include <chrono>
 #include <thread>

@@ -8,6 +8,8 @@
 #include <vtkObjectFactory.h>
 #include <vector>
 
+#include <vtkDoubleArray.h>
+
 class CSV3DImporter : public vtkImporter
 {
 protected:

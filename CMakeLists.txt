@@ -1,5 +1,7 @@
 ﻿cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
+set(CMAKE_CXX_STANDARD 17)
+
 project(VTK_Project)
 
 find_package(VTK COMPONENTS 
@@ -50,3 +52,11 @@ vtk_module_autoinit(
   TARGETS VTK_Project
   MODULES ${VTK_LIBRARIES}
 )
+
+set(EXPORT_COMPILE_COMMANDS ON)
+
+# the compiler flags for compiling C sources 
+MESSAGE( STATUS "CMAKE_C_FLAGS: " ${CMAKE_C_FLAGS} )
+
+# the compiler flags for compiling C++ sources 
+MESSAGE( STATUS "CMAKE_CXX_FLAGS: " ${CMAKE_CXX_FLAGS} )
