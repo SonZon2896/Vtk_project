@@ -63,16 +63,12 @@ int main(int argc, char* argv[])
     if (argc < 2)
     {
         vtkSP<vtkPolyData> standartObject = CreateStandartObject();
-
-        //std::cout << standartObject->GetNumberOfPoints() << std::endl;
+        app.AddObject(standartObject, false, true);
+    }
+    else if (is(argv[1], "with_scalars"))
+    {
+        vtkSP<vtkPolyData> standartObject = CreateStandartObject();
         vtkSP<vtkDoubleArray> scalars = GetScalars(standartObject->GetNumberOfPoints());
-
-        //for (int i = 0; i < scalars->GetNumberOfTuples(); ++i)
-        //{
-        //    std::cout << *scalars->GetTuple(i) << ", ";
-        //}
-        //std::cout << std::endl;
-
         standartObject->GetPointData()->SetScalars(scalars);
         app.AddObject(standartObject, true, true);
     }
