@@ -40,7 +40,7 @@ add_executable(VTK_Project MACOSX_BUNDLE
 	"Interactor.cpp"
 	"CSV3DImporter.cpp"
 	"ChangeVisionSliderCallback.cpp"
-	"InteractorStyleProject.cpp")
+	"InteractorStyleProject.cpp" "ChangeClippingSliderCallback.cpp" "ChangeClippingButtonCallback.h" "ChangeClippingButtonCallback.cpp")
 
   target_link_libraries(VTK_Project PRIVATE ${VTK_LIBRARIES}
 )

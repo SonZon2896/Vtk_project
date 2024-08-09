@@ -85,8 +85,8 @@
 #include "CSV3DImporter.h"
 #include "ChangeVisionSliderCallback.h"
 #include "InteractorStyleProject.h"
-
-#include <vtkLabeledContourMapper.h>
+#include "ChangeClippingButtonCallback.h"
+#include "ChangeClippingSliderCallback.h"
 
 #include <chrono>
 #include <thread>
@@ -117,6 +117,8 @@ private:
 	vtkSP<vtkRenderWindow> renderWindow;
 	vtkSP<vtkRenderWindowInteractor> renderWindowInteractor;
 	vtkSP<InteractorStyleProject> interactorStyle;
+	vtkSP<vtkPlane> clipPlane;
+
 	vtkSP<vtkSliderWidget> changeVisionSliderWidget;
 	vtkSP<vtkSliderWidget> changeClippingSliderWidget;
 	vtkSP<vtkButtonWidget> changeClippingButton;
