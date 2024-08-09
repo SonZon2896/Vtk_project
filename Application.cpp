@@ -1,5 +1,33 @@
 #include "Application.h"
 
+vtkSP<vtkImageData> CreateImage(int r, int g, int b)
+{
+    vtkNew<vtkImageData> image;
+
+    std::array<unsigned char, 3> color{ r, g, b };
+
+    // Specify the size of the image data.
+    image->SetDimensions(2, 2, 1);
+    image->AllocateScalars(VTK_UNSIGNED_CHAR, 3);
+
+    int* dims = image->GetDimensions();
+
+    // Fill the image with
+    for (int y = 0; y < dims[1]; y++)
+    {
+        for (int x = 0; x < dims[0]; x++)
+        {
+            unsigned char* pixel = static_cast<unsigned char*>(image->GetScalarPointer(x, y, 0));
+            for (int i = 0; i < 3; ++i)
+            {
+                pixel[i] = color[i];
+            }
+        }
+    }
+
+    return image;
+}
+
 Application::Application()
 {
     std::cout << "Initialize Application" << std::endl;
@@ -16,7 +44,9 @@ Application::Application()
     renderWindow->AddRenderer(renderer);
     renderWindow->SetSize(1280, 800);
     renderWindow->SetWindowName("Vtk Project");
+
     renderWindowInteractor->SetRenderWindow(renderWindow);
+
     interactorStyle->SetWindowInteractor(renderWindowInteractor);
     interactorStyle->SetRenderer(renderer);
 }
@@ -84,6 +114,11 @@ void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool
 
     auto bounds = source->GetBounds();
 
+    std::cout << "bounds: ";
+    for (int i = 0; i < 6; ++i)
+        std::cout << bounds[i] << ", ";
+    std::cout << std::endl;
+
     vtkNew<vtkPolyDataMapper> mapper;
     if (enableIsolines == true)
     {
@@ -134,7 +169,8 @@ void Application::Start()
 {
     std::cout << "Start" << std::endl;
 
-    CreateSlider();
+    CreateSliders();
+    CreateButtons();
     CreateFPSCounter();
 
     std::cout << "Rendering with isolines and grid" << std::endl;
@@ -346,6 +382,25 @@ void Application::ChangeVision(unsigned int mode)
     renderWindow->Render();
 }
 
+void Application::CreateClipping(vtkSP<vtkPolyData> source)
+{
+    vtkNew<vtkPlane> plane;
+
+    vtkNew<vtkClipPolyData> clipper;
+    clipper->SetInputData(source);
+    clipper->SetClipFunction(plane);
+    clipper->GenerateClippedOutputOn();
+
+    vtkNew<vtkPolyDataMapper> clippingMapper;
+    clippingMapper->SetInputConnection(clipper->GetOutputPort());
+
+    vtkNew<vtkActor> clippingActor;
+    clippingActor->SetMapper(clippingMapper);
+    clippingActor->VisibilityOff();
+
+    clippingActors.push_back(clippingActor);
+}
+
 void Application::CreateIsolines(vtkSP<vtkPolyData> source)
 {
     std::cout << "Creating isolines" << std::endl;
@@ -456,8 +511,10 @@ void Application::ShowGrid(bool flag)
     renderWindow->Render();
 }
 
-void Application::CreateSlider()
+void Application::CreateSliders()
 {
+    std::cout << "Creating Sliders" << std::endl;
+
     vtkNew<vtkSliderRepresentation2D> sliderRepresentation;
     sliderRepresentation->SetMinimumValue(0);
     sliderRepresentation->SetMaximumValue(3);
@@ -465,9 +522,9 @@ void Application::CreateSlider()
 
     sliderRepresentation->GetPoint1Coordinate()
         ->SetCoordinateSystemToNormalizedDisplay();
-    sliderRepresentation->GetPoint1Coordinate()->SetValue(.1, .1);
     sliderRepresentation->GetPoint2Coordinate()
         ->SetCoordinateSystemToNormalizedDisplay();
+    sliderRepresentation->GetPoint1Coordinate()->SetValue(.1, .1);
     sliderRepresentation->GetPoint2Coordinate()->SetValue(.9, .1);
 
     vtkNew<ChangeVisionSliderCallback> callback;
@@ -478,6 +535,82 @@ void Application::CreateSlider()
     changeVisionSliderWidget->SetRepresentation(sliderRepresentation);
     changeVisionSliderWidget->AddObserver(vtkCommand::InteractionEvent, callback);
     changeVisionSliderWidget->EnabledOn();
+
+
+    double bounds[2];
+    for (int i = 0; i < mainActors.size(); ++i)
+    {
+        double *boundsTemp = mainActors[i]->GetMapper()->GetBounds();
+
+        std::cout << "bounds: ";
+        for (int i = 0; i < 6; ++i)
+            std::cout << boundsTemp[i] << ", ";
+        std::cout << std::endl;
+
+        bounds[0] = std::min(bounds[0], boundsTemp[4]);
+        bounds[1] = std::max(bounds[1], boundsTemp[5]);
+    }
+
+    std::cout << "bounds: ";
+    for (int i = 0; i < 2; ++i)
+        std::cout << bounds[i] << ", ";
+    std::cout << std::endl;
+
+    vtkNew<vtkSliderRepresentation2D> clippingSR;
+    clippingSR->SetMinimumValue(bounds[0]);
+    clippingSR->SetMaximumValue(bounds[1]);
+    clippingSR->SetTitleText("Clipping Height");
+
+    clippingSR->GetPoint1Coordinate()
+        ->SetCoordinateSystemToNormalizedDisplay();
+    clippingSR->GetPoint2Coordinate()
+        ->SetCoordinateSystemToNormalizedViewport();
+    clippingSR->GetPoint1Coordinate()->SetValue(.5, .2);
+    clippingSR->GetPoint2Coordinate()->SetValue(.85, .2);
+
+    //vtkNew<ChangeClippingSliderCallback> clippingCb;
+    //clippingCb->app = this;
+
+    changeClippingSliderWidget = vtkSliderWidget::New();
+    changeClippingSliderWidget->SetInteractor(renderWindowInteractor);
+    changeClippingSliderWidget->SetRepresentation(clippingSR);
+    //changeClippingSliderWidget->AddObserver(vtkCommand::InteractionEvent, clippingCb);
+    changeClippingSliderWidget->EnabledOn();
+}
+
+void Application::CreateButtons()
+{
+    vtkNew<vtkCoordinate> coordinate;
+    coordinate->SetCoordinateSystemToNormalizedDisplay();
+    coordinate->SetValue(.92, .26);
+
+    double bds[6];
+    double sz = 100.0;
+    bds[0] = coordinate->GetComputedDisplayValue(renderer)[0] - sz;
+    bds[1] = bds[0] + sz;
+    bds[2] = coordinate->GetComputedDisplayValue(renderer)[1] - sz;
+    bds[3] = bds[2] + sz;
+    bds[4] = bds[5] = 0.0;
+
+    vtkSP<vtkImageData> red = CreateImage(255, 0, 0);
+    vtkSP<vtkImageData> green = CreateImage(0, 255, 0);
+
+    vtkNew<vtkTexturedButtonRepresentation2D> clippingBR;
+    clippingBR->SetNumberOfStates(2);
+    clippingBR->SetButtonTexture(0, red);
+    clippingBR->SetButtonTexture(1, green);
+    clippingBR->PlaceWidget(bds);
+
+    //vtkNew<ChangeClippingButtonCallback> clippingCb;
+    //clippingCb->sliderWidget = changeClippingSliderWidget;
+    //clippingCb->clippingActors = clippingActors;
+
+    changeClippingButton = vtkButtonWidget::New();
+    changeClippingButton->SetInteractor(renderWindowInteractor);
+    changeClippingButton->SetRepresentation(clippingBR);
+    //changeClippingButton->AddObserver(vtkCommand::InteractionEvent, clippingCb);
+    changeClippingButton->EnabledOn();
+
 }
 
 void FPSCounterCallback(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)

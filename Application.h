@@ -74,6 +74,9 @@
 #include <vtkProperty2D.h>
 #include <vtkTable.h>
 #include <vtkCoordinate.h>
+#include <vtkClipPolyData.h>
+#include <vtkPlane.h>
+
 #include <array>
 #include <string>
 #include <fstream>
@@ -105,6 +108,7 @@ private:
 
 	std::vector<vtkSP<vtkDiscretizableColorTransferFunction>> ctfs;
 	std::vector<vtkSP<vtkActor>> mainActors;
+	std::vector<vtkSP<vtkActor>> clippingActors;
 	std::vector<vtkSP<vtkActor>> isolinesActors;
 	std::vector<std::pair<vtkSP<vtkActor>, vtkSP<vtkActor>>> gridActors;
 
@@ -114,6 +118,8 @@ private:
 	vtkSP<vtkRenderWindowInteractor> renderWindowInteractor;
 	vtkSP<InteractorStyleProject> interactorStyle;
 	vtkSP<vtkSliderWidget> changeVisionSliderWidget;
+	vtkSP<vtkSliderWidget> changeClippingSliderWidget;
+	vtkSP<vtkButtonWidget> changeClippingButton;
 	vtkSP<vtkTextMapper> fpsTextMapper;
 	vtkSP<vtkActor2D> fpsTextActor;
 
@@ -122,10 +128,12 @@ private:
 	vtkSP<vtkDCTF> GetCTF(double minValue, double maxValue);
 	inline vtkSP<vtkDCTF> GetCTF(double* range) { return GetCTF(range[0], range[1]); }
 
+	void CreateClipping(vtkSP<vtkPolyData> source);
 	void CreateIsolines(vtkSP<vtkPolyData> source);
 	void CreateGrid(vtkSP<vtkPolyData> source);
 
-	void CreateSlider();
+	void CreateSliders();
+	void CreateButtons();
 	void CreateFPSCounter();
 
 public:
