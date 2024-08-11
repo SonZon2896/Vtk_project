@@ -1,13 +1,6 @@
 #pragma once
 
-#include <vtkSliderRepresentation2D.h>
-#include <vtkCommand.h>
-#include <vtkSliderRepresentation2D.h>
-#include <vtkSliderWidget.h>
-#include <functional>
-#include "Application.h"
-
-class Application;
+#include "../includes.h"
 
 class ChangeVisionSliderCallback : public vtkCommand
 {

@@ -1,11 +1,6 @@
 #pragma once
 
-#include <vtkSliderRepresentation2D.h>
-#include <vtkCommand.h>
-#include <vtkSliderRepresentation2D.h>
-#include <vtkSliderWidget.h>
-#include <functional>
-#include "Application.h"
+#include "../includes.h"
 
 class ChangeClippingButtonCallback : public vtkCommand
 {

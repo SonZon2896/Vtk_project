@@ -33,14 +33,17 @@ if (NOT VTK_FOUND)
 endif()
 
 # Prevent a "command line is too long" failure in Windows.
-set(CMAKE_NINJA_FORCE_RESPONSE_FILE "ON" CACHE BOOL "Force Ninja to use response files.")
-add_executable(VTK_Project MACOSX_BUNDLE 
-	vtk_project.cpp
+# set(CMAKE_NINJA_FORCE_RESPONSE_FILE "ON" CACHE BOOL "Force Ninja to use response files.")
+add_executable(VTK_Project 
+	"vtk_project.cpp"
 	"Application.cpp"
-	"Interactor.cpp"
-	"CSV3DImporter.cpp"
-	"ChangeVisionSliderCallback.cpp"
-	"InteractorStyleProject.cpp" "ChangeClippingSliderCallback.cpp" "ChangeClippingButtonCallback.h" "ChangeClippingButtonCallback.cpp")
+	"Interactors/Interactor.cpp"
+	"Interactors/InteractorStyleProject.cpp" 
+	"Importers/CSV3DImporter.cpp"
+	"Callbacks/ChangeVisionSliderCallback.cpp"
+	"Callbacks/ChangeClippingSliderCallback.cpp"
+	"Callbacks/ChangeClippingButtonCallback.cpp"
+	)
 
   target_link_libraries(VTK_Project PRIVATE ${VTK_LIBRARIES}
 )

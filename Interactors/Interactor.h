@@ -1,14 +1,6 @@
 #pragma once
 
-#include <vtkInteractorStyleTrackballCamera.h>
-#include <vtkRenderWindowInteractor.h>
-#include <vtkObject.h>
-#include <vtkObjectFactory.h>
-#include <map>
-#include <functional>
-#include "Application.h"
-
-class Application;
+#include "../includes.h"
 
 // Define interaction style.
 class KeyPressInteractorStyle : public vtkInteractorStyleTrackballCamera

@@ -1,14 +1,6 @@
 #pragma once
 
-#include <vtkImporter.h>
-#include <vtkIOImportModule.h>
-#include <vtkPoints.h>
-#include <vtkCellArray.h>
-#include <vtkObject.h>
-#include <vtkObjectFactory.h>
-#include <vector>
-
-#include <vtkDoubleArray.h>
+#include "../includes.h"
 
 class CSV3DImporter : public vtkImporter
 {
@@ -20,9 +12,9 @@ private:
 	void operator=(const CSV3DImporter&) = delete;
 
 	vtkSmartPointer<vtkPoints> points;
-	vtkSmartPointer<vtkCellArray> verts;
-	vtkSmartPointer<vtkCellArray> lines;
-	vtkSmartPointer<vtkCellArray> polys;
+	vtkSP<vtkCellArray> verts;
+	vtkSP<vtkCellArray> lines;
+	vtkSP<vtkCellArray> polys;
 
 public:
 	std::string fileName;

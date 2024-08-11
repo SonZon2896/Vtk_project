@@ -1,27 +1,6 @@
 #pragma once
 
-#include <vtkWorldPointPicker.h>
-#include <vtkPointPicker.h>
-#include <vtkPicker.h>
-#include <vtkRenderWindowInteractor.h>
-#include <vtkInteractorObserver.h>
-#include <vtkRenderWIndow.h>
-#include <vtkRenderer.h>
-#include <vtkCamera.h>
-#include <vtkRendererCollection.h>
-#include <vtkInteractorStyleTrackballCamera.h>
-#include <vtkObjectFactory.h>
-#include <vtkSphereSource.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkPolyData.h>
-#include <vtkActor.h>
-#include <vtkActor2D.h>
-#include <vtkTextProperty.h>
-#include <vtkTextMapper.h>
-#include <vtkMath.h>
-#include <string>
-
-#define vtkSP vtkSmartPointer
+#include "../includes.h"
 
 class InteractorStyleProject : public vtkInteractorStyleTrackballCamera
 {
