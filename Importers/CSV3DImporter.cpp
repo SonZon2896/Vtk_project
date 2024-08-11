@@ -115,7 +115,7 @@ void CSV3DImporter::Update()
 				AddPoint(fileString, pointsTemp);
 				break;
 			case tetrahedrons:
-				AddPolygon(fileString, polysTemp);
+				//AddPolygon(fileString, polysTemp);
 				break;
 			case triangles:
 				AddPolygon(fileString, polysTemp);
