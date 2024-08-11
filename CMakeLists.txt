@@ -41,7 +41,7 @@ add_executable(VTK_Project
 	"Interactors/InteractorStyleProject.cpp" 
 	"Importers/CSV3DImporter.cpp"
 	"Callbacks/ChangeVisionSliderCallback.cpp"
-	"Callbacks/ChangeClippingSliderCallback.cpp"
+	"Callbacks/ChangeClippingPlaneCallback.cpp"
 	"Callbacks/ChangeClippingButtonCallback.cpp"
 	)
 

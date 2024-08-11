@@ -81,6 +81,8 @@
 #include <vtkTextMapper.h>
 #include <vtkSliderWidget.h>
 #include <vtkSliderRepresentation2D.h>
+#include <vtkImplicitPlaneWidget2.h>
+#include <vtkImplicitPlaneRepresentation.h>
 
 #include <array>
 #include <string>
@@ -106,5 +108,5 @@ class Application;
 #include "Interactors/InteractorStyleProject.h"
 #include "Callbacks/ChangeVisionSliderCallback.h"
 #include "Callbacks/ChangeClippingButtonCallback.h"
-#include "Callbacks/ChangeClippingSliderCallback.h"
+#include "Callbacks/ChangeClippingPlaneCallback.h"
 

@@ -21,8 +21,8 @@ private:
 	vtkSP<vtkPlane> clipPlane;
 
 	vtkSP<vtkSliderWidget> changeVisionSliderWidget;
-	vtkSP<vtkSliderWidget> changeClippingSliderWidget;
 	vtkSP<vtkButtonWidget> changeClippingButton;
+	vtkSP<vtkImplicitPlaneWidget2> clippingPlaneWidget;
 	vtkSP<vtkTextMapper> fpsTextMapper;
 	vtkSP<vtkActor2D> fpsTextActor;
 
@@ -53,6 +53,11 @@ public:
 
 	void UpdateSettings();
 
+	void ShowMainActors(bool flag);
+	void ShowMainActorsOn() { ShowMainActors(true); }
+	void ShowMainActorsOff() { ShowMainActors(false); }
+
+
 	void ShowIsolines(bool flag);
 	void ShowIsolinesOn() { ShowIsolines(true); }
 	void ShowIsolinesOff() { ShowIsolines(false); }
@@ -60,6 +65,10 @@ public:
 	void ShowGrid(bool flag);
 	void ShowGridOn() { ShowGrid(true); }
 	void ShowGridOff() { ShowGrid(false); }
+
+	void ShowClipping(bool flag);
+	void ShowClippingOn() { ShowClipping(true); }
+	void ShowClippingOff() { ShowClipping(false); }
 
 	void ChangeProjection(unsigned int mode);
 	void ChangeProjectionToParallel() { ChangeProjection(0); }
@@ -70,4 +79,5 @@ public:
 	void ChangeVisionToDiscrete() { ChangeVision(1); }
 	void ChangeVisionToIsolines() { ChangeVision(2); }
 	void ChangeVisionToGrid() { ChangeVision(3); }
+	void ChangeVisionToClipping() { ChangeVision(4); }
 };

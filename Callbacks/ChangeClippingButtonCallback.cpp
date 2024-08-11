@@ -1,6 +1,6 @@
 #include "ChangeClippingButtonCallback.h"
 
-void ChangeClippingButtonCallback::Execute(vtkObject* caller, unsigned long, void*)
+void ChangeClippingButtonCallback::Execute(vtkObject* caller, unsigned long eventId, void*)
 {
 	vtkSP<vtkButtonWidget> buttonWidget =  static_cast<vtkButtonWidget*>(caller);
 	vtkSP<vtkTexturedButtonRepresentation2D> repr = reinterpret_cast<vtkTexturedButtonRepresentation2D*>(buttonWidget->GetRepresentation());
@@ -9,14 +9,14 @@ void ChangeClippingButtonCallback::Execute(vtkObject* caller, unsigned long, voi
 	switch (state)
 	{
 	case 0:
-		sliderWidget->EnabledOff();
+		clippingPlaneWidget->EnabledOff();
 		for (auto mainActor : mainActors)
 			mainActor->VisibilityOn();
 		for (auto clippingActor : clippingActors)
 			clippingActor->VisibilityOff();
 		break;
 	case 1:
-		sliderWidget->EnabledOn();
+		clippingPlaneWidget->EnabledOn();
 		for (auto mainActor : mainActors)
 			mainActor->VisibilityOff();
 		for (auto clippingActor : clippingActors)
