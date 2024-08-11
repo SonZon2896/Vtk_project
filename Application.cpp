@@ -412,9 +412,17 @@ void Application::CreateClipping(vtkSP<vtkPolyData> source)
     vtkNew<vtkPolyDataMapper> clippingMapper;
     clippingMapper->SetInputConnection(clipper->GetOutputPort());
 
+    vtkNew<vtkProperty> backFaces;
+    backFaces->SetSpecular(0.0);
+    backFaces->SetDiffuse(0.0);
+    backFaces->SetAmbient(1.0);
+    backFaces->SetAmbientColor(50. / 256., 50. / 256., 50. / 256.);
+
+
     vtkNew<vtkActor> clippingActor;
     clippingActor->SetMapper(clippingMapper);
     clippingActor->VisibilityOff();
+    clippingActor->SetBackfaceProperty(backFaces);
 
     std::cout << "bounds: ";
     for (int i = 0; i < 6; ++i)
