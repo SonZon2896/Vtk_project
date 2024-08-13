@@ -16,9 +16,11 @@ private:
 	std::vector<vtkSP<vtkActor>> clippingActors;
 	std::vector<vtkSP<vtkActor>> isolinesActors;
 	std::vector<std::pair<vtkSP<vtkActor>, vtkSP<vtkActor>>> gridActors;
+	std::vector<vtkSP<vtkActor>> outlinesActors;
 
 	vtkSP<vtkNamedColors> colors;
 	vtkSP<vtkRenderer> renderer;
+	vtkSP<vtkRenderer> rendererOutline;
 	vtkSP<vtkRenderWindow> renderWindow;
 	vtkSP<vtkRenderWindowInteractor> renderWindowInteractor;
 	vtkSP<InteractorStyleProject> interactorStyle;
@@ -38,6 +40,7 @@ private:
 	void CreateClipping(vtkSP<vtkPolyData> source);
 	void CreateIsolines(vtkSP<vtkPolyData> source);
 	void CreateGrid(vtkSP<vtkPolyData> source);
+	void CreateOutline(vtkSP<vtkPolyData> source);
 
 	void CreateSliders();
 	void CreateButtons();
@@ -73,6 +76,10 @@ public:
 	void ShowClipping(bool flag);
 	void ShowClippingOn() { ShowClipping(true); }
 	void ShowClippingOff() { ShowClipping(false); }
+
+	void ShowOutlines(bool flag);
+	void ShowOutlinesOn() { ShowOutlines(true); }
+	void ShowOutlinesOff() { ShowOutlines(false); }
 
 	void ChangeProjection(unsigned int mode);
 	void ChangeProjectionToParallel() { ChangeProjection(0); }

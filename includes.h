@@ -83,6 +83,8 @@
 #include <vtkSliderRepresentation2D.h>
 #include <vtkImplicitPlaneWidget2.h>
 #include <vtkImplicitPlaneRepresentation.h>
+#include <vtkRenderStepsPass.h>
+#include <vtkOutlineGlowPass.h>
 
 #include <array>
 #include <string>
@@ -93,6 +95,7 @@
 
 #define vtkSP vtkSmartPointer
 #define vtkDCTF vtkDiscretizableColorTransferFunction
+#define SILVER_COLOR 192. / 255., 192. / 255., 192. / 255.
 
 using json = nlohmann::json;
 

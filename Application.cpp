@@ -34,6 +34,7 @@ Application::Application()
 
     colors = vtkNamedColors::New();
     renderer = vtkRenderer::New();
+    rendererOutline = vtkRenderer::New();
     renderWindow = vtkRenderWindow::New();
     renderWindowInteractor = vtkRenderWindowInteractor::New();
     interactorStyle = InteractorStyleProject::New();
@@ -41,7 +42,12 @@ Application::Application()
     renderer->SetBackground(0., 127., 127.);
     renderer->UseHiddenLineRemovalOn();
 
+    rendererOutline->SetLayer(1);
+    rendererOutline->SetActiveCamera(renderer->GetActiveCamera());
+
+    renderWindow->AddRenderer(rendererOutline);
     renderWindow->AddRenderer(renderer);
+    renderWindow->SetNumberOfLayers(2);
     renderWindow->SetSize(1280, 800);
     renderWindow->SetWindowName("Vtk Project");
 
@@ -160,6 +166,7 @@ void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool
         CreateGrid(source);
     }
     CreateClipping(source);
+    CreateOutline(source);
 
     mainActors.push_back(actor);
 
@@ -348,6 +355,7 @@ void Application::ChangeVision(unsigned int mode)
         ShowIsolinesOff();
         ShowGridOff();
         ShowClippingOff();
+        ShowOutlinesOff();
         interactorStyle->enableSelection = false;
         break;
     case 1: // Discrete
@@ -359,37 +367,54 @@ void Application::ChangeVision(unsigned int mode)
         ShowIsolinesOff();
         ShowGridOff();
         ShowClippingOff();
+        ShowOutlinesOff();
         interactorStyle->enableSelection = false;
         break;
-    case 2: // Isolines
+    case 2: // Outlines
         for (auto mainActor : mainActors)
         {
             mainActor->GetMapper()->ScalarVisibilityOff();
-            mainActor->GetProperty()->SetColor(0, 0, 0);
+            mainActor->GetProperty()->SetColor(SILVER_COLOR);
         }
         ShowMainActorsOn();
         ShowIsolinesOn();
         ShowGridOff();
         ShowClippingOff();
+        ShowOutlinesOn();
         interactorStyle->enableSelection = false;
         break;
-    case 3: // Grid
+    case 3: // Isolines
         for (auto mainActor : mainActors)
         {
             mainActor->GetMapper()->ScalarVisibilityOff();
-            mainActor->GetProperty()->SetColor(0, 0, 0);
+            mainActor->GetProperty()->SetColor(SILVER_COLOR);
+        }
+        ShowMainActorsOn();
+        ShowIsolinesOn();
+        ShowGridOff();
+        ShowClippingOff();
+        ShowOutlinesOff();
+        interactorStyle->enableSelection = false;
+        break;
+    case 4: // Grid
+        for (auto mainActor : mainActors)
+        {
+            mainActor->GetMapper()->ScalarVisibilityOff();
+            mainActor->GetProperty()->SetColor(SILVER_COLOR);
         }
         ShowMainActorsOn();
         ShowIsolinesOff();
         ShowGridOn();
         ShowClippingOff();
+        ShowOutlinesOff();
         interactorStyle->enableSelection = true;
         break;
-    case 4: // Clipping
+    case 5: // Clipping
         ShowMainActorsOff();
         ShowIsolinesOff();
         ShowGridOff();
         ShowClippingOn();
+        ShowOutlinesOff();
         interactorStyle->enableSelection = false;
         break;
     default:
@@ -416,18 +441,13 @@ void Application::CreateClipping(vtkSP<vtkPolyData> source)
     backFaces->SetSpecular(0.0);
     backFaces->SetDiffuse(0.0);
     backFaces->SetAmbient(1.0);
-    backFaces->SetAmbientColor(50. / 256., 50. / 256., 50. / 256.);
-
+    backFaces->SetAmbientColor(SILVER_COLOR);
 
     vtkNew<vtkActor> clippingActor;
     clippingActor->SetMapper(clippingMapper);
     clippingActor->VisibilityOff();
     clippingActor->SetBackfaceProperty(backFaces);
-
-    std::cout << "bounds: ";
-    for (int i = 0; i < 6; ++i)
-        std::cout << source->GetBounds()[i] << ", ";
-    std::cout << std::endl;
+    clippingActor->GetProperty()->SetColor(SILVER_COLOR);
 
     vtkNew<vtkImplicitPlaneRepresentation> planeRepr;
     planeRepr->SetPlaceFactor(1.25);
@@ -529,6 +549,29 @@ void Application::CreateGrid(vtkSP<vtkPolyData> source)
     std::cout << "Grid Created" << std::endl;
 }
 
+void Application::CreateOutline(vtkSP<vtkPolyData> source)
+{
+    vtkNew<vtkRenderStepsPass> basicPasses;
+    vtkNew<vtkOutlineGlowPass> glowPass;
+    glowPass->SetDelegatePass(basicPasses);
+    glowPass->SetOutlineIntensity(100.);
+
+    rendererOutline->SetPass(glowPass);
+
+    vtkNew<vtkPolyDataMapper> mapper;
+    mapper->SetInputData(source);
+
+    vtkNew<vtkActor> actor;
+    actor->SetMapper(mapper);
+    actor->GetProperty()->LightingOff();
+    actor->GetProperty()->SetColor(185. / 255., 75. / 255., 0. / 255.);
+    actor->VisibilityOff();
+
+    rendererOutline->AddActor(actor);
+
+    outlinesActors.push_back(actor);
+}
+
 void Application::ShowMainActors(bool flag)
 {
     for (auto mainActor : mainActors)
@@ -576,20 +619,28 @@ void Application::ShowGrid(bool flag)
 
 void Application::ShowClipping(bool flag)
 {
-    for (auto clippingActor : clippingActors)
+    if (flag)
+    {
+        clippingPlaneWidget->EnabledOn();
+        for (auto clippingActor : clippingActors)
+            clippingActor->VisibilityOn();
+    }
+    else
+    {
+        clippingPlaneWidget->EnabledOff();
+        for (auto clippingActor : clippingActors)
+            clippingActor->VisibilityOff();
+    }
+}
+
+void Application::ShowOutlines(bool flag)
+{
+    for (auto outlineActor : outlinesActors)
     {
         if (flag)
-        {
-            clippingPlaneWidget->EnabledOn();
-            for (auto clippingActor : clippingActors)
-                clippingActor->VisibilityOn();
-        }
+            outlineActor->VisibilityOn();
         else
-        {
-            clippingPlaneWidget->EnabledOff();
-            for (auto clippingActor : clippingActors)
-                clippingActor->VisibilityOff();
-        }
+            outlineActor->VisibilityOff();
     }
 }
 
@@ -599,7 +650,7 @@ void Application::CreateSliders()
 
     vtkNew<vtkSliderRepresentation2D> sliderRepresentation;
     sliderRepresentation->SetMinimumValue(0);
-    sliderRepresentation->SetMaximumValue(4);
+    sliderRepresentation->SetMaximumValue(5);
     sliderRepresentation->SetTitleText("Vision mode");
 
     sliderRepresentation->GetPoint1Coordinate()
