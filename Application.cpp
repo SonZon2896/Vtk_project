@@ -655,13 +655,23 @@ void Application::CreateButtons()
 
 }
 
-void FPSCounterCallback(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
+void EndRenderCallback(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)
 {
     vtkRenderer* renderer = static_cast<vtkRenderer*>(caller);
     vtkTextMapper* fpsTextMapper = static_cast<vtkTextMapper*>(clientData);
 
-    double time = renderer->GetLastRenderTimeInSeconds(); // Get the time required for the last rendering call
-    int fps = 1.0 / time;
+    double time_last_render = renderer->GetLastRenderTimeInSeconds(); // Get the time required for the last rendering call
+    int fps = 1.0 / time_last_render;
+
+#ifdef ENABLE_FPS_LIMIT
+    double render_limit = 1. / FPS_LIMIT;
+    if (time_last_render < render_limit)
+    {
+        double time_to_wait = render_limit - time_last_render;
+        std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>((time_to_wait) * 1000)));
+        fps = FPS_LIMIT;
+    }
+#endif
 
     fpsTextMapper->SetInput(("FPS: " + std::to_string(fps)).c_str());
 }
@@ -681,7 +691,7 @@ void Application::CreateFPSCounter()
     renderer->AddActor(fpsTextActor);
 
     vtkNew<vtkCallbackCommand> callback;
-    callback->SetCallback(FPSCounterCallback);
+    callback->SetCallback(EndRenderCallback);
     callback->SetClientData(fpsTextMapper);
     renderer->AddObserver(vtkCommand::EndEvent, callback);
 }

@@ -2,6 +2,10 @@
 
 #include "includes.h"
 
+#define ENABLE_FPS_LIMIT
+#define FPS_LIMIT 90;
+//#undef ENABLE_FPS_LIMIT // раскоментировать если не нужен лимит фпс
+
 class Application {
 private:
 	json settings;

@@ -88,6 +88,8 @@
 #include <string>
 #include <fstream>
 #include <functional>
+#include <chrono>
+#include <thread>
 
 #define vtkSP vtkSmartPointer
 #define vtkDCTF vtkDiscretizableColorTransferFunction
