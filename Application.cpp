@@ -42,6 +42,12 @@ Application::Application()
     renderer->SetBackground(0., 127., 127.);
     renderer->UseHiddenLineRemovalOn();
 
+    vtkNew<vtkRenderStepsPass> basicPasses;
+    vtkNew<vtkOutlineGlowPass> glowPass;
+    glowPass->SetDelegatePass(basicPasses);
+    glowPass->SetOutlineIntensity(50.);
+
+    rendererOutline->SetPass(glowPass);
     rendererOutline->SetLayer(1);
     rendererOutline->SetActiveCamera(renderer->GetActiveCamera());
 
@@ -551,13 +557,6 @@ void Application::CreateGrid(vtkSP<vtkPolyData> source)
 
 void Application::CreateOutline(vtkSP<vtkPolyData> source)
 {
-    vtkNew<vtkRenderStepsPass> basicPasses;
-    vtkNew<vtkOutlineGlowPass> glowPass;
-    glowPass->SetDelegatePass(basicPasses);
-    glowPass->SetOutlineIntensity(100.);
-
-    rendererOutline->SetPass(glowPass);
-
     vtkNew<vtkPolyDataMapper> mapper;
     mapper->SetInputData(source);
 
