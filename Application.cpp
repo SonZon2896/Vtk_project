@@ -191,7 +191,7 @@ void Application::Start()
 
     renderWindow->Render();
 
-    ChangeVisionToGradient();
+    ChangeVision(0);
 
     std::cout << "Start rendering without isolines and grid" << std::endl;
 
@@ -348,80 +348,69 @@ void Application::ChangeProjection(unsigned int mode)
     renderWindow->Render();
 }
 
+void Application::HideAll()
+{
+    ShowMainActorsOff();
+    ShowIsolinesOff();
+    ShowGridOff();
+    ShowClippingOff();
+    ShowOutlinesOff();
+    interactorStyle->enableSelection = false;
+}
+
 void Application::ChangeVision(unsigned int mode)
 {
     switch (mode)
     {
     case 0: // Gradient
+        HideAll();
+        ShowMainActorsOn();
         for (auto mainActor : mainActors)
             mainActor->GetMapper()->ScalarVisibilityOn();
         for (auto ctf : ctfs)
             ctf->DiscretizeOff();
-        ShowMainActorsOn();
-        ShowIsolinesOff();
-        ShowGridOff();
-        ShowClippingOff();
-        ShowOutlinesOff();
-        interactorStyle->enableSelection = false;
         break;
     case 1: // Discrete
+        HideAll();
+        ShowMainActorsOn();
         for (auto mainActor : mainActors)
             mainActor->GetMapper()->ScalarVisibilityOn();
         for (auto ctf : ctfs)
             ctf->DiscretizeOn();
-        ShowMainActorsOn();
-        ShowIsolinesOff();
-        ShowGridOff();
-        ShowClippingOff();
-        ShowOutlinesOff();
-        interactorStyle->enableSelection = false;
         break;
     case 2: // Outlines
+        HideAll();
+        ShowMainActorsOn();
         for (auto mainActor : mainActors)
         {
             mainActor->GetMapper()->ScalarVisibilityOff();
             mainActor->GetProperty()->SetColor(SILVER_COLOR);
         }
-        ShowMainActorsOn();
-        ShowIsolinesOn();
-        ShowGridOff();
-        ShowClippingOff();
         ShowOutlinesOn();
-        interactorStyle->enableSelection = false;
         break;
     case 3: // Isolines
+        HideAll();
+        ShowMainActorsOn();
         for (auto mainActor : mainActors)
         {
             mainActor->GetMapper()->ScalarVisibilityOff();
             mainActor->GetProperty()->SetColor(SILVER_COLOR);
         }
-        ShowMainActorsOn();
         ShowIsolinesOn();
-        ShowGridOff();
-        ShowClippingOff();
-        ShowOutlinesOff();
-        interactorStyle->enableSelection = false;
         break;
     case 4: // Grid
+        HideAll();
+        ShowMainActorsOn();
         for (auto mainActor : mainActors)
         {
             mainActor->GetMapper()->ScalarVisibilityOff();
             mainActor->GetProperty()->SetColor(SILVER_COLOR);
         }
-        ShowMainActorsOn();
-        ShowIsolinesOff();
         ShowGridOn();
-        ShowClippingOff();
-        ShowOutlinesOff();
-        interactorStyle->enableSelection = true;
         break;
     case 5: // Clipping
-        ShowMainActorsOff();
-        ShowIsolinesOff();
-        ShowGridOff();
+        HideAll();
         ShowClippingOn();
-        ShowOutlinesOff();
-        interactorStyle->enableSelection = false;
         break;
     default:
         return;
@@ -564,6 +553,7 @@ void Application::CreateOutline(vtkSP<vtkPolyData> source)
     actor->SetMapper(mapper);
     actor->GetProperty()->LightingOff();
     actor->GetProperty()->SetColor(185. / 255., 75. / 255., 0. / 255.);
+    actor->GetProperty()->SetOpacity(0.05);
     actor->VisibilityOff();
 
     rendererOutline->AddActor(actor);

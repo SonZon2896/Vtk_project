@@ -64,7 +64,6 @@ public:
 	void ShowMainActorsOn() { ShowMainActors(true); }
 	void ShowMainActorsOff() { ShowMainActors(false); }
 
-
 	void ShowIsolines(bool flag);
 	void ShowIsolinesOn() { ShowIsolines(true); }
 	void ShowIsolinesOff() { ShowIsolines(false); }
@@ -85,10 +84,7 @@ public:
 	void ChangeProjectionToParallel() { ChangeProjection(0); }
 	void ChangeProjectionToPerspective() { ChangeProjection(1); }
 
+	void HideAll();
+
 	void ChangeVision(unsigned int mode);
-	void ChangeVisionToGradient() { ChangeVision(0); }
-	void ChangeVisionToDiscrete() { ChangeVision(1); }
-	void ChangeVisionToIsolines() { ChangeVision(2); }
-	void ChangeVisionToGrid() { ChangeVision(3); }
-	void ChangeVisionToClipping() { ChangeVision(4); }
 };
