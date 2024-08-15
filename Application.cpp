@@ -552,8 +552,8 @@ void Application::CreateOutline(vtkSP<vtkPolyData> source)
     vtkNew<vtkActor> actor;
     actor->SetMapper(mapper);
     actor->GetProperty()->LightingOff();
-    actor->GetProperty()->SetColor(185. / 255., 75. / 255., 0. / 255.);
-    actor->GetProperty()->SetOpacity(0.05);
+    actor->GetProperty()->SetColor(ORANGE_COLOR);
+    actor->GetProperty()->SetOpacity(1.);
     actor->VisibilityOff();
 
     rendererOutline->AddActor(actor);
