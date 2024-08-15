@@ -85,6 +85,9 @@
 #include <vtkImplicitPlaneRepresentation.h>
 #include <vtkRenderStepsPass.h>
 #include <vtkOutlineGlowPass.h>
+#include <vtkArrowSource.h>
+#include <vtkCaptionActor2D.h>
+#include <vtkTextActor.h>
 
 #include <array>
 #include <string>
@@ -115,4 +118,6 @@ class Application;
 #include "Callbacks/ChangeVisionSliderCallback.h"
 #include "Callbacks/ChangeClippingButtonCallback.h"
 #include "Callbacks/ChangeClippingPlaneCallback.h"
+#include "Actors/ProportionsActor.h"
+#include "Actors/ProportionsPieceActor.h"
 

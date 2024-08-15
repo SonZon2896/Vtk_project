@@ -17,6 +17,7 @@ private:
 	std::vector<vtkSP<vtkActor>> isolinesActors;
 	std::vector<std::pair<vtkSP<vtkActor>, vtkSP<vtkActor>>> gridActors;
 	std::vector<vtkSP<vtkActor>> outlinesActors;
+	std::vector<vtkSP<vtkActor>> propotionsActors;
 
 	vtkSP<vtkNamedColors> colors;
 	vtkSP<vtkRenderer> renderer;
@@ -41,6 +42,7 @@ private:
 	void CreateIsolines(vtkSP<vtkPolyData> source);
 	void CreateGrid(vtkSP<vtkPolyData> source);
 	void CreateOutline(vtkSP<vtkPolyData> source);
+	void CreateProportions(vtkSP<vtkPolyData> source);
 
 	void CreateSliders();
 	void CreateButtons();

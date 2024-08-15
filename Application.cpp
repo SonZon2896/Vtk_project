@@ -181,6 +181,14 @@ void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool
 
 void Application::Start()
 {
+    vtkNew<ProportionsPieceActor> actor;
+    //actor->SetLength(5.);
+    //actor->SetWidth(5.);
+    //actor->SetRadius(1.);
+    //actor->SetPosition(2., 2., 0.);
+
+    actor->SetRenderer(renderer);
+
     std::cout << "Start" << std::endl;
 
     CreateSliders();
@@ -559,6 +567,11 @@ void Application::CreateOutline(vtkSP<vtkPolyData> source)
     rendererOutline->AddActor(actor);
 
     outlinesActors.push_back(actor);
+}
+
+void Application::CreateProportions(vtkSP<vtkPolyData> source)
+{
+
 }
 
 void Application::ShowMainActors(bool flag)

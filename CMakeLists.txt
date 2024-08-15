@@ -20,6 +20,7 @@ find_package(VTK COMPONENTS
   IOGeometry
   InteractionStyle
   InteractionWidgets
+  RenderingAnnotation
   RenderingContextOpenGL2
   RenderingCore
   RenderingFreeType
@@ -43,7 +44,8 @@ add_executable(VTK_Project
 	"Callbacks/ChangeVisionSliderCallback.cpp"
 	"Callbacks/ChangeClippingPlaneCallback.cpp"
 	"Callbacks/ChangeClippingButtonCallback.cpp"
-	)
+	"Actors/ProportionsActor.cpp"
+	"Actors/ProportionsPieceActor.cpp")
 
   target_link_libraries(VTK_Project PRIVATE ${VTK_LIBRARIES}
 )
