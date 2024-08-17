@@ -95,11 +95,13 @@
 #include <functional>
 #include <chrono>
 #include <thread>
+#include <math.h>
 
 #define vtkSP vtkSmartPointer
 #define vtkDCTF vtkDiscretizableColorTransferFunction
 #define SILVER_COLOR 192. / 255., 192. / 255., 192. / 255.
 #define ORANGE_COLOR 255. / 255., 165. / 255., 0. / 255.
+# define M_PI 3.1415
 
 using json = nlohmann::json;
 

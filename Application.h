@@ -14,6 +14,7 @@ private:
 	std::vector<vtkSP<vtkDiscretizableColorTransferFunction>> ctfs;
 	std::vector<vtkSP<vtkActor>> mainActors;
 	std::vector<vtkSP<vtkActor>> clippingActors;
+	std::vector<vtkSP<vtkImplicitPlaneWidget2>> clippingPlaneWidgets;
 	std::vector<vtkSP<vtkActor>> isolinesActors;
 	std::vector<std::pair<vtkSP<vtkActor>, vtkSP<vtkActor>>> gridActors;
 	std::vector<vtkSP<vtkActor>> outlinesActors;
@@ -29,7 +30,6 @@ private:
 
 	vtkSP<vtkSliderWidget> changeVisionSliderWidget;
 	vtkSP<vtkButtonWidget> changeClippingButton;
-	vtkSP<vtkImplicitPlaneWidget2> clippingPlaneWidget;
 	vtkSP<vtkTextMapper> fpsTextMapper;
 	vtkSP<vtkActor2D> fpsTextActor;
 

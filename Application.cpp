@@ -181,14 +181,6 @@ void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool
 
 void Application::Start()
 {
-    vtkNew<ProportionsPieceActor> actor;
-    //actor->SetLength(5.);
-    //actor->SetWidth(5.);
-    //actor->SetRadius(1.);
-    //actor->SetPosition(2., 2., 0.);
-
-    actor->SetRenderer(renderer);
-
     std::cout << "Start" << std::endl;
 
     CreateSliders();
@@ -461,7 +453,7 @@ void Application::CreateClipping(vtkSP<vtkPolyData> source)
     vtkNew<ChangeClippingPlaneCallback> planeCb;
     planeCb->clipPlane = clipPlane;
 
-    clippingPlaneWidget = vtkImplicitPlaneWidget2::New();
+    vtkNew<vtkImplicitPlaneWidget2> clippingPlaneWidget;
     clippingPlaneWidget->SetInteractor(renderWindowInteractor);
     clippingPlaneWidget->SetRepresentation(planeRepr);
     clippingPlaneWidget->AddObserver(vtkCommand::InteractionEvent, planeCb);
@@ -470,6 +462,7 @@ void Application::CreateClipping(vtkSP<vtkPolyData> source)
     renderer->AddActor(clippingActor);
 
     clippingActors.push_back(clippingActor);
+    clippingPlaneWidgets.push_back(clippingPlaneWidget);
 }
 
 void Application::CreateIsolines(vtkSP<vtkPolyData> source)
@@ -621,17 +614,18 @@ void Application::ShowGrid(bool flag)
 
 void Application::ShowClipping(bool flag)
 {
-    if (flag)
+    for (int i = 0; i < clippingActors.size(); ++i)
     {
-        clippingPlaneWidget->EnabledOn();
-        for (auto clippingActor : clippingActors)
-            clippingActor->VisibilityOn();
-    }
-    else
-    {
-        clippingPlaneWidget->EnabledOff();
-        for (auto clippingActor : clippingActors)
-            clippingActor->VisibilityOff();
+        if (flag)
+        {
+            clippingPlaneWidgets[i]->EnabledOn();
+            clippingActors[i]->VisibilityOn();
+        }
+        else
+        {
+            clippingPlaneWidgets[i]->EnabledOff();
+            clippingActors[i]->VisibilityOff();
+        }
     }
 }
 
