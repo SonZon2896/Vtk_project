@@ -88,6 +88,8 @@
 #include <vtkArrowSource.h>
 #include <vtkCaptionActor2D.h>
 #include <vtkTextActor.h>
+#include <vtkLinearTransform.h>
+#include <vtkTransform.h>
 
 #include <array>
 #include <string>

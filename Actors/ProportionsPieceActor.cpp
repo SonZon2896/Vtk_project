@@ -87,6 +87,28 @@ double* add(double* vec1, double* vec2)
 	return vec1;
 }
 
+double *ToQuaternion(double roll, double pitch, double yaw)
+{
+	// Abbreviations for the various angular functions
+
+	double cr = cos(roll * 0.5 / 180 * M_PI);
+	double sr = sin(roll * 0.5 / 180 * M_PI);
+	double cp = cos(pitch * 0.5 / 180 * M_PI);
+	double sp = sin(pitch * 0.5 / 180 * M_PI);
+	double cy = cos(yaw * 0.5 / 180 * M_PI);
+	double sy = sin(yaw * 0.5 / 180 * M_PI);
+
+	double *q = new double[4];
+	q[0] = (cr * cp * cy + sr * sp * sy);
+	q[1] = (sr * cp * cy - cr * sp * sy);
+	q[2] = (cr * sp * cy + sr * cp * sy);
+	q[3] = (cr * cp * sy - sr * sp * cy);
+
+	std::cout << "Input " << roll << ", " << pitch << ", " << yaw << " -> " << q[0] << ", " << q[1] << ", " << q[2] << ", " << q[3] << std::endl;
+
+	return q;
+}
+
 void ProportionsPieceActor::UpdateProps()
 {
 	proportionLabel->SetCaption(std::to_string(width).c_str());
@@ -103,31 +125,43 @@ void ProportionsPieceActor::UpdateProps()
 	coneSource->SetHeight(width * conePart);
 	coneSource->Update();
 
-	leftLine->SetPosition(add(rotate(-width / 2, length / 2, 0., orientation), position));
-	rightLine->SetPosition(add(rotate(width / 2, length / 2, 0., orientation), position));
-	centerLine->SetPosition(add(rotate(0., length, 0., orientation), position));
-	leftCone->SetPosition(add(rotate(-width / 2 * (1 - conePart), length, 0., orientation), position));
-	rightCone->SetPosition(add(rotate(width / 2 * (1 - conePart), length, 0., orientation), position));
+	vtkNew<vtkTransform> leftLineTransform;
+	vtkNew<vtkTransform> rightLineTransform;
+	vtkNew<vtkTransform> centerLineTrasform;
+	vtkNew<vtkTransform> leftConeTransform;
+	vtkNew<vtkTransform> rightConeTransform;
 
-	leftLine->RotateZ(-orientation[2]);
-	leftLine->RotateY(orientation[1]);
-	leftLine->RotateX(orientation[0]);
+	double* q = ToQuaternion(orientation[0], orientation[1], orientation[2]);
 
-	rightLine->RotateZ(-orientation[2]);
-	rightLine->RotateY(orientation[1]);
-	rightLine->RotateX(orientation[0]);
+	double w = 180 - asin(q[0]) * 2 * 180 / M_PI;
+	double x = q[1];
+	double y = q[2];
+	double z = q[3];
 
-	centerLine->RotateY(orientation[1]);
-	centerLine->RotateX(orientation[0]);
-	centerLine->RotateZ(-orientation[2] - 90.);
+	leftLineTransform->RotateWXYZ(w, x, y, z);
+	leftLineTransform->Translate(-width / 2, length / 2, 0.);
 
-	leftCone->RotateY(orientation[1] + 180.);
-	leftCone->RotateX(orientation[0]);
-	leftCone->RotateZ(orientation[2]);
+	rightLineTransform->RotateWXYZ(w, x, y, z);
+	rightLineTransform->Translate(width / 2, length / 2, 0.);
 
-	rightCone->RotateY(orientation[1]);
-	rightCone->RotateX(orientation[0]);
-	rightCone->RotateZ(-orientation[2]);
+	centerLineTrasform->RotateWXYZ(w, x, y, z);
+	centerLineTrasform->Translate(0., length, 0.);
+	centerLineTrasform->RotateZ(90.);
+
+	leftConeTransform->RotateWXYZ(w, x, y, z);
+	leftConeTransform->Translate(-width / 2 * (1 - conePart), length, 0.); 
+	leftConeTransform->RotateY(180.);
+
+	rightConeTransform->RotateWXYZ(w, x, y, z);
+	rightConeTransform->Translate(width / 2 * (1 - conePart), length, 0.);
+
+	delete q;
+
+	leftLine->SetUserTransform(leftLineTransform);
+	rightLine->SetUserTransform(rightLineTransform);
+	centerLine->SetUserTransform(centerLineTrasform);
+	leftCone->SetUserTransform(leftConeTransform);
+	rightCone->SetUserTransform(rightConeTransform);
 
 	proportionLabel->SetAttachmentPoint(add(rotate(0., length, 0., orientation), position));
 	proportionLabel->SetPosition(-160., 0);
@@ -157,15 +191,15 @@ void ProportionsPieceActor::SetConePart(double conePart)
 	UpdateProps();
 }
 
-void ProportionsPieceActor::SetRenderer(vtkRenderer* renderer)
-{
-	renderer->AddActor(proportionLabel);
-	renderer->AddActor(rightLine);
-	renderer->AddActor(leftLine);
-	renderer->AddActor(centerLine);
-	renderer->AddActor(leftCone);
-	renderer->AddActor(rightCone);
-}
+//void ProportionsPieceActor::SetRenderer(vtkRenderer* renderer)
+//{
+//	renderer->AddActor(proportionLabel);
+//	renderer->AddActor(rightLine);
+//	renderer->AddActor(leftLine);
+//	renderer->AddActor(centerLine);
+//	renderer->AddActor(leftCone);
+//	renderer->AddActor(rightCone);
+//}
 
 void ProportionsPieceActor::SetPosition(double* position)
 {
@@ -183,121 +217,122 @@ void ProportionsPieceActor::SetOrientation(double* orientation)
 	UpdateProps();
 }
 
-//double* ProportionsPieceActor::GetBounds()
-//{
-//	vtkProp3D* props[5] = { rightLine, leftLine, centerLine, leftCone, rightCone };
-//
-//	double* maxBounds = new double[6] {0., 0., 0., 0., 0., 0.};
-//	double bounds[6];
-//	for (auto prop : props)
-//	{
-//		prop->GetBounds(bounds);
-//		for (int i = 0; i < 3; ++i)
-//		{
-//			maxBounds[i * 2] = std::min(maxBounds[i * 2], bounds[i * 2]);
-//			maxBounds[i * 2 + 1] = std::max(maxBounds[i * 2 + 1], bounds[i * 2 + 1]);
-//		}
-//	}
-//
-//	for (int i = 0; i < 6; ++i)
-//		this->Bounds[i] = maxBounds[i];
-//	delete maxBounds;
-//
-//	return Bounds;
-//}
-//
-//void ProportionsPieceActor::GetActors(vtkPropCollection* props)
-//{
-//	props->AddItem(proportionLabel);
-//	props->AddItem(rightLine);
-//	props->AddItem(leftLine);
-//	props->AddItem(centerLine);
-//	props->AddItem(leftCone);
-//	props->AddItem(rightCone);
-//}
-//
-//int ProportionsPieceActor::RenderOpaqueGeometry(vtkViewport* viewport)
-//{
-//	//UpdateProps();
-//
-//	int renderedSomething = 0;
-//
-//	renderedSomething |= rightLine->RenderOpaqueGeometry(viewport);
-//	renderedSomething |= leftLine->RenderOpaqueGeometry(viewport);
-//	renderedSomething |= centerLine->RenderOpaqueGeometry(viewport);
-//	renderedSomething |= leftCone->RenderOpaqueGeometry(viewport);
-//	renderedSomething |= rightCone->RenderOpaqueGeometry(viewport);
-//	renderedSomething |= proportionLabel->RenderOpaqueGeometry(viewport);
-//
-//	std::cout << "RenderOpaqueGeometry return " << (renderedSomething) << std::endl;
-//	return renderedSomething > 0 ? 1 : 0;
-//}
-//
-//int ProportionsPieceActor::RenderTranslucentPolygonalGeometry(vtkViewport* viewport)
-//{
-//	//UpdateProps();
-//
-//	int renderedSomething = 0;
-//
-//	renderedSomething |= proportionLabel->RenderTranslucentPolygonalGeometry(viewport);
-//	renderedSomething |= rightLine->RenderTranslucentPolygonalGeometry(viewport);
-//	renderedSomething |= leftLine->RenderTranslucentPolygonalGeometry(viewport);
-//	renderedSomething |= centerLine->RenderTranslucentPolygonalGeometry(viewport);
-//	renderedSomething |= leftCone->RenderTranslucentPolygonalGeometry(viewport);
-//	renderedSomething |= rightCone->RenderTranslucentPolygonalGeometry(viewport);
-//
-//	std::cout << "RenderTranslucentPolygonalGeometry return " << (renderedSomething) << std::endl;
-//	return renderedSomething > 0 ? 1 : 0;
-//}
-//
-//int ProportionsPieceActor::RenderOverlay(vtkViewport* viewport)
-//{
-//	//UpdateProps();
-//
-//	int renderedSomething = 0;
-//
-//	renderedSomething += proportionLabel->RenderOverlay(viewport);
-//
-//	std::cout << "RenderOverlay return " << (renderedSomething) << std::endl;
-//	return renderedSomething > 0 ? 1 : 0;
-//}
-//
-//vtkTypeBool ProportionsPieceActor::HasTranslucentPolygonalGeometry()
-//{
-//	//UpdateProps();
-//
-//	int renderedSomething = 0;
-//
-//	renderedSomething += proportionLabel->HasTranslucentPolygonalGeometry();
-//	renderedSomething |= rightLine->HasTranslucentPolygonalGeometry();
-//	renderedSomething |= leftLine->HasTranslucentPolygonalGeometry();
-//	renderedSomething |= centerLine->HasTranslucentPolygonalGeometry();
-//	renderedSomething |= leftCone->HasTranslucentPolygonalGeometry();
-//	renderedSomething |= rightCone->HasTranslucentPolygonalGeometry();
-//
-//	std::cout << "HasTranslucentPolygonalGeometry return " << (renderedSomething > 0 ? 1 : 0) << std::endl;
-//	return renderedSomething > 0 ? 1 : 0;
-//}
-//
-//void ProportionsPieceActor::ReleaseGraphicsResources(vtkWindow* win)
-//{
-//	proportionLabel->ReleaseGraphicsResources(win);
-//	rightLine->ReleaseGraphicsResources(win);
-//	leftLine->ReleaseGraphicsResources(win);
-//	centerLine->ReleaseGraphicsResources(win);
-//	leftCone->ReleaseGraphicsResources(win);
-//	rightCone->ReleaseGraphicsResources(win);
-//}
-//
-//vtkMTimeType ProportionsPieceActor::GetMTime()
-//{
-//	vtkMTimeType mTime = this->Superclass::GetMTime();
-//	return mTime;
-//}
-//
-////------------------------------------------------------------------------------
-//vtkMTimeType ProportionsPieceActor::GetRedrawMTime()
-//{
-//	vtkMTimeType mTime = this->GetMTime();
-//	return mTime;
-//}
+double* ProportionsPieceActor::GetBounds()
+{
+	UpdateProps();
+
+	vtkProp3D* props[5] = { rightLine, leftLine, centerLine, leftCone, rightCone };
+
+	double* maxBounds = new double[6] {0., 0., 0., 0., 0., 0.};
+	double bounds[6];
+	for (auto prop : props)
+	{
+		prop->GetBounds(bounds);
+		for (int i = 0; i < 3; ++i)
+		{
+			maxBounds[i * 2] = std::min(maxBounds[i * 2], bounds[i * 2]);
+			maxBounds[i * 2 + 1] = std::max(maxBounds[i * 2 + 1], bounds[i * 2 + 1]);
+		}
+	}
+
+	for (int i = 0; i < 6; ++i)
+		this->Bounds[i] = maxBounds[i];
+	delete maxBounds;
+
+	return Bounds;
+}
+
+void ProportionsPieceActor::GetActors(vtkPropCollection* props)
+{
+	UpdateProps();
+
+	props->AddItem(proportionLabel);
+	props->AddItem(rightLine);
+	props->AddItem(leftLine);
+	props->AddItem(centerLine);
+	props->AddItem(leftCone);
+	props->AddItem(rightCone);
+}
+
+int ProportionsPieceActor::RenderOpaqueGeometry(vtkViewport* viewport)
+{
+	UpdateProps();
+
+	int renderedSomething = 0;
+
+	renderedSomething |= rightLine->RenderOpaqueGeometry(viewport);
+	renderedSomething |= leftLine->RenderOpaqueGeometry(viewport);
+	renderedSomething |= centerLine->RenderOpaqueGeometry(viewport);
+	renderedSomething |= leftCone->RenderOpaqueGeometry(viewport);
+	renderedSomething |= rightCone->RenderOpaqueGeometry(viewport);
+	renderedSomething |= proportionLabel->RenderOpaqueGeometry(viewport);
+
+	return renderedSomething > 0 ? 1 : 0;
+}
+
+int ProportionsPieceActor::RenderTranslucentPolygonalGeometry(vtkViewport* viewport)
+{
+	UpdateProps();
+
+	int renderedSomething = 0;
+
+	renderedSomething |= proportionLabel->RenderTranslucentPolygonalGeometry(viewport);
+	renderedSomething |= rightLine->RenderTranslucentPolygonalGeometry(viewport);
+	renderedSomething |= leftLine->RenderTranslucentPolygonalGeometry(viewport);
+	renderedSomething |= centerLine->RenderTranslucentPolygonalGeometry(viewport);
+	renderedSomething |= leftCone->RenderTranslucentPolygonalGeometry(viewport);
+	renderedSomething |= rightCone->RenderTranslucentPolygonalGeometry(viewport);
+
+	return renderedSomething > 0 ? 1 : 0;
+}
+
+int ProportionsPieceActor::RenderOverlay(vtkViewport* viewport)
+{
+	UpdateProps();
+
+	int renderedSomething = 0;
+
+	renderedSomething += proportionLabel->RenderOverlay(viewport);
+
+	return renderedSomething > 0 ? 1 : 0;
+}
+
+vtkTypeBool ProportionsPieceActor::HasTranslucentPolygonalGeometry()
+{
+	UpdateProps();
+
+	int renderedSomething = 0;
+
+	renderedSomething += proportionLabel->HasTranslucentPolygonalGeometry();
+	renderedSomething |= rightLine->HasTranslucentPolygonalGeometry();
+	renderedSomething |= leftLine->HasTranslucentPolygonalGeometry();
+	renderedSomething |= centerLine->HasTranslucentPolygonalGeometry();
+	renderedSomething |= leftCone->HasTranslucentPolygonalGeometry();
+	renderedSomething |= rightCone->HasTranslucentPolygonalGeometry();
+
+	return renderedSomething > 0 ? 1 : 0;
+}
+
+void ProportionsPieceActor::ReleaseGraphicsResources(vtkWindow* win)
+{
+	UpdateProps();
+
+	proportionLabel->ReleaseGraphicsResources(win);
+	rightLine->ReleaseGraphicsResources(win);
+	leftLine->ReleaseGraphicsResources(win);
+	centerLine->ReleaseGraphicsResources(win);
+	leftCone->ReleaseGraphicsResources(win);
+	rightCone->ReleaseGraphicsResources(win);
+}
+
+vtkMTimeType ProportionsPieceActor::GetMTime()
+{
+	vtkMTimeType mTime = this->Superclass::GetMTime();
+	return mTime;
+}
+
+vtkMTimeType ProportionsPieceActor::GetRedrawMTime()
+{
+	vtkMTimeType mTime = this->GetMTime();
+	return mTime;
+}

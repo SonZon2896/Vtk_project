@@ -2,7 +2,7 @@
 
 #include "../includes.h"
 
-class ProportionsPieceActor : public vtkObject
+class ProportionsPieceActor : public vtkProp3D
 {
 private:
 	ProportionsPieceActor();
@@ -37,9 +37,19 @@ public:
 	void SetRadius(double radius);
 	void SetConePart(double conePart);
 
-	void SetRenderer(vtkRenderer* renderer);
+	//void SetRenderer(vtkRenderer* renderer);
 	void SetPosition(double* pos);
 	void SetPosition(double x, double y, double z) { return SetPosition(new double[3] {x, y, z}); }
 	void SetOrientation(double* orient);
 	void SetOrientation(double x, double y, double z) { return SetOrientation(new double[3] {x, y, z}); }
+
+	double* GetBounds() override;
+	void GetActors(vtkPropCollection* props) override;
+	int RenderOpaqueGeometry(vtkViewport* viewport) override;
+	int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
+	int RenderOverlay(vtkViewport* viewport) override;
+	vtkTypeBool HasTranslucentPolygonalGeometry() override;
+	void ReleaseGraphicsResources(vtkWindow* window) override;
+	vtkMTimeType GetMTime() override;
+	vtkMTimeType GetRedrawMTime() override;
 };
