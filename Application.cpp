@@ -185,7 +185,7 @@ void Application::Start()
     actor1->SetLength(.25);
     actor1->SetWidth(1.);
     actor1->SetRadius(.02);
-    actor1->SetPosition(0., 0., 0.);
+    actor1->SetPosition(0., 0.5, 0.);
     actor1->SetOrientation(0., 90., 90.);
     renderer->AddActor(actor1);
 

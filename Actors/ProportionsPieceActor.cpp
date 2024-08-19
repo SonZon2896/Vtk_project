@@ -89,8 +89,6 @@ double* add(double* vec1, double* vec2)
 
 double *ToQuaternion(double roll, double pitch, double yaw)
 {
-	// Abbreviations for the various angular functions
-
 	double cr = cos(roll * 0.5 / 180 * M_PI);
 	double sr = sin(roll * 0.5 / 180 * M_PI);
 	double cp = cos(pitch * 0.5 / 180 * M_PI);
@@ -103,8 +101,6 @@ double *ToQuaternion(double roll, double pitch, double yaw)
 	q[1] = (sr * cp * cy - cr * sp * sy);
 	q[2] = (cr * sp * cy + sr * cp * sy);
 	q[3] = (cr * cp * sy - sr * sp * cy);
-
-	std::cout << "Input " << roll << ", " << pitch << ", " << yaw << " -> " << q[0] << ", " << q[1] << ", " << q[2] << ", " << q[3] << std::endl;
 
 	return q;
 }
@@ -132,30 +128,33 @@ void ProportionsPieceActor::UpdateProps()
 	vtkNew<vtkTransform> rightConeTransform;
 
 	double* q = ToQuaternion(orientation[0], orientation[1], orientation[2]);
-
 	double w = 180 - asin(q[0]) * 2 * 180 / M_PI;
 	double x = q[1];
 	double y = q[2];
 	double z = q[3];
+	delete q;
 
+	leftLineTransform->Translate(position);
 	leftLineTransform->RotateWXYZ(w, x, y, z);
 	leftLineTransform->Translate(-width / 2, length / 2, 0.);
 
+	rightLineTransform->Translate(position);
 	rightLineTransform->RotateWXYZ(w, x, y, z);
 	rightLineTransform->Translate(width / 2, length / 2, 0.);
 
+	centerLineTrasform->Translate(position);
 	centerLineTrasform->RotateWXYZ(w, x, y, z);
 	centerLineTrasform->Translate(0., length, 0.);
 	centerLineTrasform->RotateZ(90.);
 
+	leftConeTransform->Translate(position);
 	leftConeTransform->RotateWXYZ(w, x, y, z);
 	leftConeTransform->Translate(-width / 2 * (1 - conePart), length, 0.); 
 	leftConeTransform->RotateY(180.);
 
+	rightConeTransform->Translate(position);
 	rightConeTransform->RotateWXYZ(w, x, y, z);
 	rightConeTransform->Translate(width / 2 * (1 - conePart), length, 0.);
-
-	delete q;
 
 	leftLine->SetUserTransform(leftLineTransform);
 	rightLine->SetUserTransform(rightLineTransform);
@@ -163,7 +162,13 @@ void ProportionsPieceActor::UpdateProps()
 	leftCone->SetUserTransform(leftConeTransform);
 	rightCone->SetUserTransform(rightConeTransform);
 
-	proportionLabel->SetAttachmentPoint(add(rotate(0., length, 0., orientation), position));
+	//leftLine->SetPosition(position);
+	//rightLine->SetPosition(position);
+	//centerLine->SetPosition(position);
+	//leftCone->SetPosition(position);
+	//rightCone->SetPosition(position);
+
+	proportionLabel->SetAttachmentPoint(centerLine->GetCenter());
 	proportionLabel->SetPosition(-160., 0);
 }
 
