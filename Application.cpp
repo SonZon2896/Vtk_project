@@ -69,7 +69,7 @@ void Application::AddSettings(std::string filename)
     UpdateJson();
 }
 
-void Application::AddObject(std::string fileName, bool enableIsolines, bool enableGrid)
+void Application::AddObject(std::string fileName, bool enableIsolines, bool enableGrid, bool enableProportions)
 {
     std::cout << "Start read object in file" << std::endl;
 
@@ -106,7 +106,7 @@ void Application::AddObject(std::string fileName, bool enableIsolines, bool enab
         polyData->SetPoints(importer->GetPoints());
         polyData->SetPolys(importer->GetPolys());
 
-        AddObject(polyData, false, enableGrid);
+        AddObject(polyData, false, enableGrid, enableProportions);
 
         std::cout << "File readed" << std::endl;
     }
@@ -116,7 +116,7 @@ void Application::AddObject(std::string fileName, bool enableIsolines, bool enab
     }
 }
 
-void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool enableGrid)
+void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool enableGrid, bool enableProportions)
 {
     std::cout << "Adding Object" << std::endl;
 
@@ -167,12 +167,16 @@ void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool
 
     renderer->AddActor(actor);
 
+    CreateClipping(source);
+    CreateOutline(source);
     if (enableGrid == true)
     {
         CreateGrid(source);
     }
-    CreateClipping(source);
-    CreateOutline(source);
+    if (enableProportions == true)
+    {
+        CreateProportions(actor);
+    }
 
     mainActors.push_back(actor);
 
@@ -181,10 +185,6 @@ void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool
 
 void Application::Start()
 {
-    vtkNew<ProportionsActor> proportionsActor;
-    proportionsActor->SetActor(mainActors[0]);
-    renderer->AddActor(proportionsActor);
-
     std::cout << "Start" << std::endl;
 
     CreateSliders();
@@ -359,6 +359,7 @@ void Application::HideAll()
     ShowGridOff();
     ShowClippingOff();
     ShowOutlinesOff();
+    ShowProportionsOff();
     interactorStyle->enableSelection = false;
 }
 
@@ -416,6 +417,15 @@ void Application::ChangeVision(unsigned int mode)
         HideAll();
         ShowClippingOn();
         break;
+    case 6: // Proportions
+        HideAll();
+        ShowMainActorsOn();
+        for (auto mainActor : mainActors)
+        {
+            mainActor->GetMapper()->ScalarVisibilityOff();
+            mainActor->GetProperty()->SetColor(SILVER_COLOR);
+        }
+        ShowProportionsOn();
     default:
         return;
     }
@@ -558,7 +568,7 @@ void Application::CreateOutline(vtkSP<vtkPolyData> source)
     actor->SetMapper(mapper);
     actor->GetProperty()->LightingOff();
     actor->GetProperty()->SetColor(ORANGE_COLOR);
-    actor->GetProperty()->SetOpacity(1.);
+    actor->GetProperty()->SetOpacity(.02);
     actor->VisibilityOff();
 
     rendererOutline->AddActor(actor);
@@ -566,9 +576,13 @@ void Application::CreateOutline(vtkSP<vtkPolyData> source)
     outlinesActors.push_back(actor);
 }
 
-void Application::CreateProportions(vtkSP<vtkPolyData> source)
+void Application::CreateProportions(vtkSP<vtkActor> actor)
 {
+    vtkNew<ProportionsActor> proportionsActor;
+    proportionsActor->SetActor(actor);
+    renderer->AddActor(proportionsActor);
 
+    propotionsActors.push_back(proportionsActor);
 }
 
 void Application::ShowMainActors(bool flag)
@@ -644,13 +658,24 @@ void Application::ShowOutlines(bool flag)
     }
 }
 
+void Application::ShowProportions(bool flag)
+{
+    for (auto propotionsActor : propotionsActors)
+    {
+        if (flag)
+            propotionsActor->VisibilityOn();
+        else
+            propotionsActor->VisibilityOff();
+    }
+}
+
 void Application::CreateSliders()
 {
     std::cout << "Creating Sliders" << std::endl;
 
     vtkNew<vtkSliderRepresentation2D> sliderRepresentation;
     sliderRepresentation->SetMinimumValue(0);
-    sliderRepresentation->SetMaximumValue(5);
+    sliderRepresentation->SetMaximumValue(6);
     sliderRepresentation->SetTitleText("Vision mode");
 
     sliderRepresentation->GetPoint1Coordinate()

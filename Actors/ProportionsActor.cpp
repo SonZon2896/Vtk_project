@@ -33,6 +33,13 @@ void ProportionsActor::UpdateProps()
 	//proportionsPieceActors[2]->SetLength((bounds[5] - bounds[4]) / 2);
 	proportionsPieceActors[2]->SetLength((bounds[5] - bounds[4]) / 2 + bounds[5] - pos[2]);
 	proportionsPieceActors[2]->SetWidth(bounds[3] - bounds[2]);
+
+	double minRange = bounds[1] - bounds[0];
+	for (int i = 1; i < 3; ++i)
+		minRange = std::min(minRange, bounds[i * 2 + 1] - bounds[i * 2]);
+
+	for (auto proportionsPieceActor : proportionsPieceActors)
+		proportionsPieceActor->SetRadius(minRange / 300.);
 }
 
 double* ProportionsActor::GetBounds()

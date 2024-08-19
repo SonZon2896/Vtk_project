@@ -63,18 +63,32 @@ int main(int argc, char* argv[])
     if (argc < 2)
     {
         vtkSP<vtkPolyData> standartObject = CreateStandartObject();
-        app.AddObject(standartObject, false, true);
+#ifdef DEBUG
+        std::cout << "using debug" << std::endl;
+        app.AddObject(standartObject, false, true, true);
+#elif RELEASE
+        std::cout << "using release" << std::endl;
+        app.AddObject(standartObject, false, true, false);
+#endif
     }
     else if (is(argv[1], "with_scalars"))
     {
         vtkSP<vtkPolyData> standartObject = CreateStandartObject();
         vtkSP<vtkDoubleArray> scalars = GetScalars(standartObject->GetNumberOfPoints());
         standartObject->GetPointData()->SetScalars(scalars);
-        app.AddObject(standartObject, true, true);
+#ifdef DEBUG
+        app.AddObject(standartObject, true, true, true);
+#elif RELEASE
+        app.AddObject(standartObject, true, true, false);
+#endif
     }
     else
     {
-        app.AddObject(argv[1], true, true);
+#ifdef DEBUG
+        app.AddObject(argv[1], true, true, true);
+#elif RELEASE
+        app.AddObject(argv[1], true, true, false);
+#endif
     }
 
     app.Start();

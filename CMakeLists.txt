@@ -50,6 +50,13 @@ add_executable(VTK_Project
   target_link_libraries(VTK_Project PRIVATE ${VTK_LIBRARIES}
 )
 
+target_compile_definitions(VTK_Project
+    PRIVATE
+        # If the debug configuration pass the DEBUG define to the compiler 
+        $<$<CONFIG:Debug>:DEBUG>
+		$<$<CONFIG:Release>:RELEASE>
+)
+
 file(COPY Examples DESTINATION "${CMAKE_BINARY_DIR}")
 
 # vtk_module_autoinit is needed

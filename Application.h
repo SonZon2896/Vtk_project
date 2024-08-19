@@ -18,7 +18,7 @@ private:
 	std::vector<vtkSP<vtkActor>> isolinesActors;
 	std::vector<std::pair<vtkSP<vtkActor>, vtkSP<vtkActor>>> gridActors;
 	std::vector<vtkSP<vtkActor>> outlinesActors;
-	std::vector<vtkSP<vtkActor>> propotionsActors;
+	std::vector<vtkSP<vtkProp3D>> propotionsActors;
 
 	vtkSP<vtkNamedColors> colors;
 	vtkSP<vtkRenderer> renderer;
@@ -42,7 +42,7 @@ private:
 	void CreateIsolines(vtkSP<vtkPolyData> source);
 	void CreateGrid(vtkSP<vtkPolyData> source);
 	void CreateOutline(vtkSP<vtkPolyData> source);
-	void CreateProportions(vtkSP<vtkPolyData> source);
+	void CreateProportions(vtkSP<vtkActor> actor);
 
 	void CreateSliders();
 	void CreateButtons();
@@ -52,8 +52,8 @@ public:
 	Application();
 
 	void AddSettings(std::string path_to_settings);
-	void AddObject(std::string path_to_file, bool enableIsolines = false, bool enableGrid = false);
-	void AddObject(vtkSP<vtkPolyData> source, bool enableIsolines = false, bool enableGrid = false);
+	void AddObject(std::string path_to_file, bool enableIsolines = false, bool enableGrid = false, bool enableProportions = false);
+	void AddObject(vtkSP<vtkPolyData> source, bool enableIsolines = false, bool enableGrid = false, bool enableProportions = false);
 
 	void Start();
 	void OffScreenRendering();
@@ -81,6 +81,11 @@ public:
 	void ShowOutlines(bool flag);
 	void ShowOutlinesOn() { ShowOutlines(true); }
 	void ShowOutlinesOff() { ShowOutlines(false); }
+
+	void ShowProportions(bool flag);
+	void ShowProportionsOn() { ShowProportions(true); }
+	void ShowProportionsOff() { ShowProportions(false); }
+
 
 	void ChangeProjection(unsigned int mode);
 	void ChangeProjectionToParallel() { ChangeProjection(0); }
