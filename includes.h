@@ -108,6 +108,8 @@
 
 using json = nlohmann::json;
 
+class ProportionsPieceActor;
+class ProportionsActor;
 class CSV3DImporter;
 class Interactor;
 class InteractorStyleProject;
@@ -123,6 +125,6 @@ class Application;
 #include "Callbacks/ChangeVisionSliderCallback.h"
 #include "Callbacks/ChangeClippingButtonCallback.h"
 #include "Callbacks/ChangeClippingPlaneCallback.h"
-#include "Actors/ProportionsActor.h"
 #include "Actors/ProportionsPieceActor.h"
+#include "Actors/ProportionsActor.h"
 
