@@ -60,36 +60,37 @@ int main(int argc, char* argv[])
 {
     Application app;
 
-    if (argc < 2)
-    {
-        vtkSP<vtkPolyData> standartObject = CreateStandartObject();
-#ifdef DEBUG
-        std::cout << "using debug" << std::endl;
-        app.AddObject(standartObject, false, true, true);
-#elif RELEASE
-        std::cout << "using release" << std::endl;
-        app.AddObject(standartObject, false, true, false);
-#endif
-    }
-    else if (is(argv[1], "with_scalars"))
-    {
-        vtkSP<vtkPolyData> standartObject = CreateStandartObject();
-        vtkSP<vtkDoubleArray> scalars = GetScalars(standartObject->GetNumberOfPoints());
-        standartObject->GetPointData()->SetScalars(scalars);
-#ifdef DEBUG
-        app.AddObject(standartObject, true, true, true);
-#elif RELEASE
-        app.AddObject(standartObject, true, true, false);
-#endif
-    }
-    else
-    {
-#ifdef DEBUG
-        app.AddObject(argv[1], true, true, true);
-#elif RELEASE
-        app.AddObject(argv[1], true, true, false);
-#endif
-    }
+//    if (argc < 2)
+//    {
+//        vtkSP<vtkPolyData> standartObject = CreateStandartObject();
+//#ifdef DEBUG
+//        std::cout << "using debug" << std::endl;
+//        app.AddObject(standartObject, false, true, true);
+//#elif RELEASE
+//        std::cout << "using release" << std::endl;
+//        app.AddObject(standartObject, false, true, false);
+//#endif
+//    }
+//    else if (is(argv[1], "with_scalars"))
+//    {
+//        vtkSP<vtkPolyData> standartObject = CreateStandartObject();
+//        vtkSP<vtkDoubleArray> scalars = GetScalars(standartObject->GetNumberOfPoints());
+//        standartObject->GetPointData()->SetScalars(scalars);
+//#ifdef DEBUG
+//        app.AddObject(standartObject, true, true, true);
+//#elif RELEASE
+//        app.AddObject(standartObject, true, true, false);
+//#endif
+//    }
+//    else
+//    {
+//#ifdef DEBUG
+//        app.AddObject(argv[1], true, true, true);
+//#elif RELEASE
+//        app.AddObject(argv[1], true, true, false);
+//#endif
+//    }
+    app.AddObject("Examples\\3D_fork_0.csv3d", true, true, false);
 
     app.Start();
 

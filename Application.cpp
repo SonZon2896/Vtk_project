@@ -107,7 +107,10 @@ void Application::AddObject(std::string fileName, bool enableIsolines, bool enab
         polyData->SetPolys(importer->GetPolys());
 
         AddObject(polyData, false, enableGrid, enableProportions);
-
+#ifdef DEBUG
+        if (importer->IsQuadTriangles())
+            AddQuadraticTriangles(importer->GetQuadTriangles());
+#endif
         std::cout << "File readed" << std::endl;
     }
     else
@@ -181,6 +184,33 @@ void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool
     mainActors.push_back(actor);
 
     std::cout << "Object Created" << std::endl;
+}
+
+void Application::AddQuadraticTriangles(std::vector<vtkSP<vtkUnstructuredGrid>> grids)
+{
+    std::cout << "Adding quadric triangles" << std::endl;
+
+    std::vector<vtkSP<vtkActor>> quadricActor;
+    for (auto grid : grids)
+    {
+        vtkNew<vtkTessellatorFilter> tessellate;
+        tessellate->SetInputData(grid);
+
+        vtkNew<vtkDataSetMapper> mapper;
+        mapper->SetInputConnection(tessellate->GetOutputPort());
+        mapper->ScalarVisibilityOff();
+
+        // Create an actor for the grid
+        vtkNew<vtkActor> actor;
+        actor->SetMapper(mapper);
+        actor->GetProperty()->SetColor(SILVER_COLOR);
+
+        renderer->AddActor(actor);
+        quadricActor.push_back(actor);
+    }
+    quadricActors.push_back(quadricActor);
+
+    std::cout << "quadric triangles created" << std::endl;
 }
 
 void Application::Start()
@@ -360,6 +390,7 @@ void Application::HideAll()
     ShowClippingOff();
     ShowOutlinesOff();
     ShowProportionsOff();
+    ShowQuadricOff();
     interactorStyle->enableSelection = false;
 }
 
@@ -412,6 +443,7 @@ void Application::ChangeVision(unsigned int mode)
             mainActor->GetProperty()->SetColor(SILVER_COLOR);
         }
         ShowGridOn();
+        interactorStyle->enableSelection = true;
         break;
     case 5: // Clipping
         HideAll();
@@ -426,6 +458,11 @@ void Application::ChangeVision(unsigned int mode)
             mainActor->GetProperty()->SetColor(SILVER_COLOR);
         }
         ShowProportionsOn();
+        break;
+    case 7: // Quadric
+        HideAll();
+        ShowQuadricOn();
+        break;
     default:
         return;
     }
@@ -561,6 +598,8 @@ void Application::CreateGrid(vtkSP<vtkPolyData> source)
 
 void Application::CreateOutline(vtkSP<vtkPolyData> source)
 {
+    std::cout << "Creating Outline" << std::endl;
+
     vtkNew<vtkPolyDataMapper> mapper;
     mapper->SetInputData(source);
 
@@ -574,15 +613,21 @@ void Application::CreateOutline(vtkSP<vtkPolyData> source)
     rendererOutline->AddActor(actor);
 
     outlinesActors.push_back(actor);
+
+    std::cout << "Outline created" << std::endl;
 }
 
 void Application::CreateProportions(vtkSP<vtkActor> actor)
 {
+    std::cout << "Creating Proportions" << std::endl;
+
     vtkNew<ProportionsActor> proportionsActor;
     proportionsActor->SetActor(actor);
     renderer->AddActor(proportionsActor);
 
     propotionsActors.push_back(proportionsActor);
+
+    std::cout << "Proportions created" << std::endl;
 }
 
 void Application::ShowMainActors(bool flag)
@@ -637,7 +682,7 @@ void Application::ShowClipping(bool flag)
         if (flag)
         {
             clippingPlaneWidgets[i]->EnabledOn();
-            clippingActors[i]->VisibilityOn();
+             clippingActors[i]->VisibilityOn();
         }
         else
         {
@@ -669,13 +714,20 @@ void Application::ShowProportions(bool flag)
     }
 }
 
+void Application::ShowQuadric(bool flag)
+{
+    for (auto quadricActor : quadricActors)
+        for (auto polygon : quadricActor)
+            polygon->SetVisibility(flag);
+}
+
 void Application::CreateSliders()
 {
     std::cout << "Creating Sliders" << std::endl;
 
     vtkNew<vtkSliderRepresentation2D> sliderRepresentation;
     sliderRepresentation->SetMinimumValue(0);
-    sliderRepresentation->SetMaximumValue(6);
+    sliderRepresentation->SetMaximumValue(7);
     sliderRepresentation->SetTitleText("Vision mode");
 
     sliderRepresentation->GetPoint1Coordinate()

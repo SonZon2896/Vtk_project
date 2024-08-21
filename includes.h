@@ -91,6 +91,10 @@
 #include <vtkAbstractTransform.h>
 #include <vtkLinearTransform.h>
 #include <vtkTransform.h>
+#include <vtkQuadraticTriangle.h>
+#include <vtkUnstructuredGrid.h>
+#include <vtkTessellatorFilter.h>
+#include <vtkDataSetMapper.h>
 
 #include <array>
 #include <string>

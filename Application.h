@@ -19,6 +19,7 @@ private:
 	std::vector<std::pair<vtkSP<vtkActor>, vtkSP<vtkActor>>> gridActors;
 	std::vector<vtkSP<vtkActor>> outlinesActors;
 	std::vector<vtkSP<vtkProp3D>> propotionsActors;
+	std::vector<std::vector<vtkSP<vtkActor>>> quadricActors;
 
 	vtkSP<vtkNamedColors> colors;
 	vtkSP<vtkRenderer> renderer;
@@ -54,6 +55,7 @@ public:
 	void AddSettings(std::string path_to_settings);
 	void AddObject(std::string path_to_file, bool enableIsolines = false, bool enableGrid = false, bool enableProportions = false);
 	void AddObject(vtkSP<vtkPolyData> source, bool enableIsolines = false, bool enableGrid = false, bool enableProportions = false);
+	void AddQuadraticTriangles(std::vector<vtkSP<vtkUnstructuredGrid>> grids);
 
 	void Start();
 	void OffScreenRendering();
@@ -86,6 +88,9 @@ public:
 	void ShowProportionsOn() { ShowProportions(true); }
 	void ShowProportionsOff() { ShowProportions(false); }
 
+	void ShowQuadric(bool flag);
+	void ShowQuadricOn() { ShowQuadric(true); }
+	void ShowQuadricOff() { ShowQuadric(false); }
 
 	void ChangeProjection(unsigned int mode);
 	void ChangeProjectionToParallel() { ChangeProjection(0); }
