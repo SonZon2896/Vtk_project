@@ -195,6 +195,7 @@ void Application::AddQuadraticTriangles(std::vector<vtkSP<vtkUnstructuredGrid>> 
     {
         vtkNew<vtkTessellatorFilter> tessellate;
         tessellate->SetInputData(grid);
+        tessellate->SetChordError(0.000002);
 
         vtkNew<vtkDataSetMapper> mapper;
         mapper->SetInputConnection(tessellate->GetOutputPort());
