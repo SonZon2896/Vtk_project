@@ -39,7 +39,7 @@ Application::Application()
     renderWindowInteractor = vtkRenderWindowInteractor::New();
     interactorStyle = InteractorStyleProject::New();
 
-    renderer->SetBackground(0., 127., 127.);
+    renderer->SetBackground(0. / 255., 255. / 255., 255. / 255.);
     renderer->UseHiddenLineRemovalOn();
 
     vtkNew<vtkRenderStepsPass> basicPasses;
@@ -49,12 +49,11 @@ Application::Application()
 
     rendererOutline->SetPass(glowPass);
     rendererOutline->SetLayer(1);
-    rendererOutline->SetActiveCamera(renderer->GetActiveCamera());
 
     renderWindow->AddRenderer(rendererOutline);
     renderWindow->AddRenderer(renderer);
     renderWindow->SetNumberOfLayers(2);
-    renderWindow->SetSize(1280, 800);
+    renderWindow->SetSize(1920, 1080);
     renderWindow->SetWindowName("Vtk Project");
 
     renderWindowInteractor->SetRenderWindow(renderWindow);
@@ -222,15 +221,16 @@ void Application::Start()
     CreateButtons();
     CreateFPSCounter();
 
-    std::cout << "Rendering with isolines and grid" << std::endl;
+    std::cout << "Rendering all" << std::endl;
 
     renderWindow->Render();
 
     ChangeVision(0);
 
-    std::cout << "Start rendering without isolines and grid" << std::endl;
+    std::cout << "Start rendering only model" << std::endl;
 
     renderWindow->Render();
+    rendererOutline->SetActiveCamera(renderer->GetActiveCamera());
 
     std::cout << "End rendering" << std::endl;
 
@@ -239,13 +239,14 @@ void Application::Start()
 
 void Application::OffScreenRendering()
 {
+    ChangeVision(0);
     renderWindow->OffScreenRenderingOn();
     renderWindow->Render();
 }
 
 void Application::SaveScreen(std::string fileName)
 {
-    bool rgba = true;
+    bool rgba = false;
     if (!fileName.empty())
     {
         std::string fn = fileName;
@@ -289,6 +290,7 @@ void Application::SaveScreen(std::string fileName)
         {
             writer = vtkSmartPointer<vtkPNGWriter>::New();
         }
+
         vtkNew<vtkWindowToImageFilter> window_to_image_filter;
         window_to_image_filter->SetInput(renderWindow);
         window_to_image_filter->SetScale(1); // image quality
@@ -302,7 +304,29 @@ void Application::SaveScreen(std::string fileName)
         }
         // Read from the front buffer.
         window_to_image_filter->ReadFrontBufferOff();
+
+        auto start_time = std::chrono::high_resolution_clock::now();
         window_to_image_filter->Update();
+        auto time = std::chrono::high_resolution_clock::now() - start_time;
+        std::cout << "Extracting buffer: " << std::chrono::duration_cast<std::chrono::milliseconds>(time).count() << " milliseconds" << std::endl;
+
+        vtkImageData* imageData = window_to_image_filter->GetOutput();
+        std::cout << "Writing buffer with resoulution: " << imageData->GetDimensions()[0] << "x" << imageData->GetDimensions()[1] << std::endl;
+
+        std::ofstream out;
+        out.open("buffer.txt");
+        if (out.is_open())
+        {
+            start_time = std::chrono::high_resolution_clock::now();
+            for (int i = 0; i < imageData->GetPointData()->GetScalars()->GetNumberOfTuples(); ++i)
+            {
+                double* color = imageData->GetPointData()->GetScalars()->GetTuple(i);
+                out << (char)color[0] << (char)color[1] << (char)color[2];
+            }
+            time = std::chrono::high_resolution_clock::now() - start_time;
+            std::cout << "Writing buffer: " << std::chrono::duration_cast<std::chrono::milliseconds>(time).count() << " milliseconds" << std::endl;
+        }
+        out.close();
 
         writer->SetFileName(fn.c_str());
         writer->SetInputConnection(window_to_image_filter->GetOutputPort());
