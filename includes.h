@@ -44,7 +44,7 @@
 #include <vtkContourFilter.h>
 #include <vtkRandomSequence.h>
 #include <vtkMinimalStandardRandomSequence.h>
-#include <vtknlohmann/json.hpp>
+//#include <vtknlohmann/json.hpp>
 #include <vtkDoubleArray.h>
 #include <vtkFloatArray.h>
 #include <vtkPointData.h>
@@ -112,7 +112,7 @@
 #define ORANGE_COLOR 255. / 255., 165. / 255., 0. / 255.
 #define M_PI 3.1415
 
-using json = nlohmann::json;
+//using json = nlohmann::json;
 
 class ProportionsPieceActor;
 class ProportionsActor;

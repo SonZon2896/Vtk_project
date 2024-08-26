@@ -8,7 +8,7 @@
 
 class Application {
 private:
-	json settings;
+	//json settings;
 	std::string pathToSettings;
 
 	std::vector<vtkSP<vtkDiscretizableColorTransferFunction>> ctfs;

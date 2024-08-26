@@ -53,7 +53,7 @@ Application::Application()
     renderWindow->AddRenderer(rendererOutline);
     renderWindow->AddRenderer(renderer);
     renderWindow->SetNumberOfLayers(2);
-    renderWindow->SetSize(1920, 1080);
+    renderWindow->SetSize(1280, 800);
     renderWindow->SetWindowName("Vtk Project");
 
     renderWindowInteractor->SetRenderWindow(renderWindow);
@@ -106,10 +106,8 @@ void Application::AddObject(std::string fileName, bool enableIsolines, bool enab
         polyData->SetPolys(importer->GetPolys());
 
         AddObject(polyData, false, enableGrid, enableProportions);
-#ifdef DEBUG
         if (importer->IsQuadTriangles())
             AddQuadraticTriangles(importer->GetQuadTriangles());
-#endif
         std::cout << "File readed" << std::endl;
     }
     else
@@ -341,7 +339,7 @@ void Application::SaveScreen(std::string fileName)
 void Application::UpdateJson()
 {
     std::ifstream f(pathToSettings);
-    settings = json::parse(f);
+    //settings = json::parse(f);
 }
 
 vtkSP<vtkDCTF> Application::GetCTF(double minValue, double maxValue)
