@@ -40,6 +40,7 @@ public:
 	//void SetRenderer(vtkRenderer* renderer);
 	void SetPosition(double* pos);
 	void SetPosition(double x, double y, double z) { return SetPosition(new double[3] {x, y, z}); }
+	double* GetPosition() { return position; }
 	void SetOrientation(double* orient);
 	void SetOrientation(double x, double y, double z) { return SetOrientation(new double[3] {x, y, z}); }
 

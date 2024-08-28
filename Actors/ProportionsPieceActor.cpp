@@ -124,7 +124,7 @@ void ProportionsPieceActor::UpdateProps()
 	cylinderLengthSource->SetRadius(radius);
 	cylinderLengthSource->Update();
 
-	coneSource->SetRadius(radius * 2);
+	coneSource->SetRadius(std::min(radius * 2, sin(15. * M_PI / 180.) * width / 2 + radius));
 	coneSource->SetHeight(width * conePart);
 	coneSource->Update();
 

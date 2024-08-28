@@ -37,12 +37,15 @@ void ProportionsActor::UpdateProps()
 	{
 		if (camera != nullptr)
 		{
-			range = vtkMath::Distance2BetweenPoints(proportionsPieceActor->GetCenter(), camera->GetPosition());
-			range = std::min(minRange, range / 700);
+			range = vtkMath::Distance2BetweenPoints(proportionsPieceActor->GetPosition(), camera->GetPosition());
+			std::cout << "range before: " << range << std::endl;
+			range *= sin(.2 * M_PI / 180.);
+			range = std::min(minRange, range);
+			std::cout << "range after: " << range << std::endl;
 		}
 		else
 			range = minRange;
-		proportionsPieceActor->SetRadius(range);
+		proportionsPieceActor->SetRadius(range / 2);
 	}
 }
 
