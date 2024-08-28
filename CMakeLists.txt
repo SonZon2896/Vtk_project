@@ -43,7 +43,7 @@ add_executable(VTK_Project
 	"Importers/CSV3DImporter.cpp"
 	"Callbacks/ChangeVisionSliderCallback.cpp"
 	"Callbacks/ChangeClippingPlaneCallback.cpp"
-	"Callbacks/ChangeClippingButtonCallback.cpp"
+	
 	"Actors/ProportionsActor.cpp"
 	"Actors/ProportionsPieceActor.cpp")
 

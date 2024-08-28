@@ -39,7 +39,7 @@ Application::Application()
     renderWindowInteractor = vtkRenderWindowInteractor::New();
     interactorStyle = InteractorStyleProject::New();
 
-    renderer->SetBackground(0. / 255., 255. / 255., 255. / 255.);
+    renderer->SetBackground(colors->GetColor3d("SkyBlue").GetData());
     renderer->UseHiddenLineRemovalOn();
 
     vtkNew<vtkRenderStepsPass> basicPasses;
@@ -68,7 +68,7 @@ void Application::AddSettings(std::string filename)
     UpdateJson();
 }
 
-void Application::AddObject(std::string fileName, bool enableIsolines, bool enableGrid, bool enableProportions)
+void Application::AddObject(std::string fileName)
 {
     std::cout << "Start read object in file" << std::endl;
 
@@ -105,7 +105,7 @@ void Application::AddObject(std::string fileName, bool enableIsolines, bool enab
         polyData->SetPoints(importer->GetPoints());
         polyData->SetPolys(importer->GetPolys());
 
-        AddObject(polyData, false, enableGrid, enableProportions);
+        AddObject(polyData);
         if (importer->IsQuadTriangles())
             AddQuadraticTriangles(importer->GetQuadTriangles());
         std::cout << "File readed" << std::endl;
@@ -116,13 +116,9 @@ void Application::AddObject(std::string fileName, bool enableIsolines, bool enab
     }
 }
 
-void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool enableGrid, bool enableProportions)
+void Application::AddObject(vtkSP<vtkPolyData> source, bool enableScalars)
 {
     std::cout << "Adding Object" << std::endl;
-
-    //std::cout << "scalars: ";
-    //std::cout << source->GetPointData()->GetScalars()->GetNumberOfValues();
-    //source->GetPointData()->GetScalars()->PrintValues(std::cout);
 
     auto bounds = source->GetBounds();
 
@@ -132,7 +128,7 @@ void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool
     std::cout << std::endl;
 
     vtkNew<vtkPolyDataMapper> mapper;
-    if (enableIsolines == true)
+    if (enableScalars)
     {
         auto ctf = GetCTF(source->GetScalarRange());
 
@@ -160,6 +156,8 @@ void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool
         mapper->SetColorModeToMapScalars();
         mapper->InterpolateScalarsBeforeMappingOn();
         mapper->SetScalarModeToUsePointData();
+
+        CreateIsolines(elevationFilter->GetPolyDataOutput());
     }
 
     vtkNew<vtkActor> actor;
@@ -169,14 +167,8 @@ void Application::AddObject(vtkSP<vtkPolyData> source, bool enableIsolines, bool
 
     CreateClipping(source);
     CreateOutline(source);
-    if (enableGrid == true)
-    {
-        CreateGrid(source);
-    }
-    if (enableProportions == true)
-    {
-        CreateProportions(actor);
-    }
+    CreateGrid(source);
+    CreateProportions(actor);
 
     mainActors.push_back(actor);
 
@@ -201,7 +193,7 @@ void Application::AddQuadraticTriangles(std::vector<vtkSP<vtkUnstructuredGrid>> 
         // Create an actor for the grid
         vtkNew<vtkActor> actor;
         actor->SetMapper(mapper);
-        actor->GetProperty()->SetColor(SILVER_COLOR);
+        actor->GetProperty()->SetColor(colors->GetColor3d("Silver").GetData());
 
         renderer->AddActor(actor);
         quadricActor.push_back(actor);
@@ -223,6 +215,8 @@ void Application::Start()
 
     renderWindow->Render();
 
+    HideAll();
+    ShowMainActorsOn();
     ChangeVision(0);
 
     std::cout << "Start rendering only model" << std::endl;
@@ -385,22 +379,9 @@ void Application::UpdateSettings()
     renderWindow->Render();
 }
 
-void Application::ChangeProjection(unsigned int mode)
+void Application::ChangeProjection(bool mode)
 {
-    if (mode > 1)
-        return;
-
-    vtkRendererCollection *renderers = renderWindow->GetRenderers();
-    vtkCollectionIterator *renderersIter = renderers->NewIterator();
-    for (renderersIter->GoToFirstItem(); !renderersIter->IsDoneWithTraversal(); renderersIter->GoToNextItem())
-    {
-        auto renderer = static_cast<vtkRenderer*>(renderersIter->GetCurrentObject());
-        auto camera = renderer->GetActiveCamera();
-        if (mode == 0)
-            camera->SetParallelProjection(true);
-        if (mode == 1)
-            camera->SetParallelProjection(false);
-    }
+    renderer->GetActiveCamera()->SetParallelProjection(mode);
     
     renderWindow->Render();
 }
@@ -421,70 +402,35 @@ void Application::ChangeVision(unsigned int mode)
 {
     switch (mode)
     {
-    case 0: // Gradient
-        HideAll();
-        ShowMainActorsOn();
+    case 0: // Standart
+        for (auto mainActor : mainActors)
+        {
+            mainActor->GetMapper()->ScalarVisibilityOff();
+            mainActor->GetProperty()->SetColor(colors->GetColor3d("Silver").GetData());
+        }
+        ShowIsolinesOff();
+        break;
+    case 1: // Gradient
         for (auto mainActor : mainActors)
             mainActor->GetMapper()->ScalarVisibilityOn();
         for (auto ctf : ctfs)
             ctf->DiscretizeOff();
+        ShowIsolinesOff();
         break;
-    case 1: // Discrete
-        HideAll();
-        ShowMainActorsOn();
+    case 2: // Discrete
         for (auto mainActor : mainActors)
             mainActor->GetMapper()->ScalarVisibilityOn();
         for (auto ctf : ctfs)
             ctf->DiscretizeOn();
-        break;
-    case 2: // Outlines
-        HideAll();
-        ShowMainActorsOn();
-        for (auto mainActor : mainActors)
-        {
-            mainActor->GetMapper()->ScalarVisibilityOff();
-            mainActor->GetProperty()->SetColor(SILVER_COLOR);
-        }
-        ShowOutlinesOn();
+        ShowIsolinesOff();
         break;
     case 3: // Isolines
-        HideAll();
-        ShowMainActorsOn();
         for (auto mainActor : mainActors)
         {
             mainActor->GetMapper()->ScalarVisibilityOff();
-            mainActor->GetProperty()->SetColor(SILVER_COLOR);
+            mainActor->GetProperty()->SetColor(colors->GetColor3d("Silver").GetData());
         }
         ShowIsolinesOn();
-        break;
-    case 4: // Grid
-        HideAll();
-        ShowMainActorsOn();
-        for (auto mainActor : mainActors)
-        {
-            mainActor->GetMapper()->ScalarVisibilityOff();
-            mainActor->GetProperty()->SetColor(SILVER_COLOR);
-        }
-        ShowGridOn();
-        interactorStyle->enableSelection = true;
-        break;
-    case 5: // Clipping
-        HideAll();
-        ShowClippingOn();
-        break;
-    case 6: // Proportions
-        HideAll();
-        ShowMainActorsOn();
-        for (auto mainActor : mainActors)
-        {
-            mainActor->GetMapper()->ScalarVisibilityOff();
-            mainActor->GetProperty()->SetColor(SILVER_COLOR);
-        }
-        ShowProportionsOn();
-        break;
-    case 7: // Quadric
-        HideAll();
-        ShowQuadricOn();
         break;
     default:
         return;
@@ -510,13 +456,13 @@ void Application::CreateClipping(vtkSP<vtkPolyData> source)
     backFaces->SetSpecular(0.0);
     backFaces->SetDiffuse(0.0);
     backFaces->SetAmbient(1.0);
-    backFaces->SetAmbientColor(SILVER_COLOR);
+    backFaces->SetAmbientColor(colors->GetColor3d("Silver").GetData());
 
     vtkNew<vtkActor> clippingActor;
     clippingActor->SetMapper(clippingMapper);
     clippingActor->VisibilityOff();
     clippingActor->SetBackfaceProperty(backFaces);
-    clippingActor->GetProperty()->SetColor(SILVER_COLOR);
+    clippingActor->GetProperty()->SetColor(colors->GetColor3d("Silver").GetData());
 
     vtkNew<vtkImplicitPlaneRepresentation> planeRepr;
     planeRepr->SetPlaceFactor(1.25);
@@ -629,8 +575,7 @@ void Application::CreateOutline(vtkSP<vtkPolyData> source)
     vtkNew<vtkActor> actor;
     actor->SetMapper(mapper);
     actor->GetProperty()->LightingOff();
-    actor->GetProperty()->SetColor(ORANGE_COLOR);
-    actor->GetProperty()->SetOpacity(.02);
+    actor->GetProperty()->SetColor(colors->GetColor3d("Orange").GetData());
     actor->VisibilityOff();
 
     rendererOutline->AddActor(actor);
@@ -656,27 +601,13 @@ void Application::CreateProportions(vtkSP<vtkActor> actor)
 void Application::ShowMainActors(bool flag)
 {
     for (auto mainActor : mainActors)
-    {
-        if (flag)
-        {
-            mainActor->VisibilityOn();
-        }
-        else
-        {
-            mainActor->VisibilityOff();
-        }
-    }
+        mainActor->SetVisibility(flag);
 }
 
 void Application::ShowIsolines(bool flag)
 {
     for (auto isolinesActor : isolinesActors)
-    {
-        if (flag)
-            isolinesActor->VisibilityOn();
-        else
-            isolinesActor->VisibilityOff();
-    }
+        isolinesActor->SetVisibility(flag);
     renderWindow->Render();
 }
 
@@ -684,16 +615,9 @@ void Application::ShowGrid(bool flag)
 {
     for (auto gridActor : gridActors)
     {
-        if (flag)
-        {
-            gridActor.first->VisibilityOn();
-            gridActor.second->VisibilityOn();
-        }
-        else
-        {
-            gridActor.first->VisibilityOff();
-            gridActor.second->VisibilityOff();
-        }
+        gridActor.first->SetVisibility(flag);
+        gridActor.second->SetVisibility(flag);
+        interactorStyle->enableSelection = flag;
     }
     renderWindow->Render();
 }
@@ -702,39 +626,21 @@ void Application::ShowClipping(bool flag)
 {
     for (int i = 0; i < clippingActors.size(); ++i)
     {
-        if (flag)
-        {
-            clippingPlaneWidgets[i]->EnabledOn();
-             clippingActors[i]->VisibilityOn();
-        }
-        else
-        {
-            clippingPlaneWidgets[i]->EnabledOff();
-            clippingActors[i]->VisibilityOff();
-        }
+        clippingPlaneWidgets[i]->SetEnabled(flag);
+        clippingActors[i]->SetVisibility(flag);
     }
 }
 
 void Application::ShowOutlines(bool flag)
 {
     for (auto outlineActor : outlinesActors)
-    {
-        if (flag)
-            outlineActor->VisibilityOn();
-        else
-            outlineActor->VisibilityOff();
-    }
+        outlineActor->SetVisibility(flag);
 }
 
 void Application::ShowProportions(bool flag)
 {
     for (auto propotionsActor : propotionsActors)
-    {
-        if (flag)
-            propotionsActor->VisibilityOn();
-        else
-            propotionsActor->VisibilityOff();
-    }
+        propotionsActor->SetVisibility(flag);
 }
 
 void Application::ShowQuadric(bool flag)
@@ -750,7 +656,7 @@ void Application::CreateSliders()
 
     vtkNew<vtkSliderRepresentation2D> sliderRepresentation;
     sliderRepresentation->SetMinimumValue(0);
-    sliderRepresentation->SetMaximumValue(7);
+    sliderRepresentation->SetMaximumValue(4);
     sliderRepresentation->SetTitleText("Vision mode");
 
     sliderRepresentation->GetPoint1Coordinate()
@@ -770,40 +676,154 @@ void Application::CreateSliders()
     changeVisionSliderWidget->EnabledOn();
 }
 
+#define CREATE_SIMPLE_BUTTON_CALLBACK(name) void name(vtkObject* caller, unsigned long eventId, void* clientData, void* callData) \
+{ \
+    auto app = static_cast<Application*>(clientData); \
+    auto button = static_cast<vtkButtonWidget*>(caller); \
+    auto repr = static_cast<vtkTexturedButtonRepresentation2D*>(button->GetRepresentation()); \
+    int state = repr->GetState(); 
+
+CREATE_SIMPLE_BUTTON_CALLBACK(ChangeProjectionCallback)
+    app->ChangeProjection(state);
+}
+CREATE_SIMPLE_BUTTON_CALLBACK(ChangeGridCallback)
+    app->ShowGrid(state);
+}
+CREATE_SIMPLE_BUTTON_CALLBACK(ChangeOutlineCallback)
+    app->ShowOutlines(state);
+}
+CREATE_SIMPLE_BUTTON_CALLBACK(ChangeProportionsCallback)
+    app->ShowProportions(state);
+}
+struct AppWithButton
+{
+    Application* app;
+    vtkButtonWidget* button;
+
+    AppWithButton(Application* app, vtkButtonWidget* button)
+    {
+        this->app = app;
+        this->button = button;
+    }
+};
+
+void ChangeQuadElemsCallback(vtkObject* caller, unsigned long eventId, void* clientData, void* callData) {
+    auto app = static_cast<Application*>(static_cast<AppWithButton*>(clientData)->app);
+    auto button = static_cast<vtkButtonWidget*>(caller); 
+    auto repr = static_cast<vtkTexturedButtonRepresentation2D*>(button->GetRepresentation()); 
+    int state = repr->GetState();
+    auto clippingButton = reinterpret_cast<vtkButtonWidget*>(static_cast<AppWithButton*>(clientData)->button);
+    auto clippingRepresentation = static_cast<vtkTexturedButtonRepresentation2D*>(clippingButton->GetRepresentation());
+    if (state && clippingRepresentation->GetState())
+    {
+        clippingRepresentation->SetState(0);
+        clippingButton->InvokeEvent(vtkCommand::StateChangedEvent);
+    }
+    app->ShowMainActors(!state);
+    app->ShowQuadric(state);
+}
+void ChangeClippingCallback(vtkObject* caller, unsigned long eventId, void* clientData, void* callData) {
+    auto app = static_cast<Application*>(static_cast<AppWithButton*>(clientData)->app);
+    auto button = static_cast<vtkButtonWidget*>(caller);
+    auto repr = static_cast<vtkTexturedButtonRepresentation2D*>(button->GetRepresentation());
+    int state = repr->GetState();
+    auto quadElemsButton = reinterpret_cast<vtkButtonWidget*>(static_cast<AppWithButton*>(clientData)->button);
+    auto quadElemsRepresentation = static_cast<vtkTexturedButtonRepresentation2D*>(quadElemsButton->GetRepresentation());
+    if (state && quadElemsRepresentation->GetState())
+    {
+        quadElemsRepresentation->SetState(0);
+        quadElemsButton->InvokeEvent(vtkCommand::StateChangedEvent);
+    }
+    app->ShowMainActors(!state);
+    app->ShowClipping(state);
+}
+
+vtkSP<vtkButtonWidget> Application::CreateButton(double x, double y, std::string buttonName)
+{
+    vtkSP<vtkImageData> red = CreateImage(255, 0, 0);
+    vtkSP<vtkImageData> green = CreateImage(0, 255, 0);
+
+    vtkNew<vtkCoordinate> coordinate;
+    coordinate->SetCoordinateSystemToNormalizedDisplay();
+    coordinate->SetValue(x, y);
+
+    double bds[6];
+    double sz = 100.0;
+    bds[0] = coordinate->GetComputedDisplayValue(renderer)[0] - sz;
+    bds[1] = bds[0] + sz;
+    bds[2] = coordinate->GetComputedDisplayValue(renderer)[1] - sz;
+    bds[3] = bds[2] + sz;
+    bds[4] = bds[5] = 0.0;
+
+    vtkNew<vtkTexturedButtonRepresentation2D> buttonRepresentation;
+    buttonRepresentation->SetNumberOfStates(2);
+    buttonRepresentation->SetButtonTexture(0, red);
+    buttonRepresentation->SetButtonTexture(1, green);
+    buttonRepresentation->PlaceWidget(bds);
+
+    vtkNew<vtkButtonWidget> buttonWidget;
+    buttonWidget->SetInteractor(renderWindowInteractor);
+    buttonWidget->SetRepresentation(buttonRepresentation);
+    buttonWidget->EnabledOn();
+
+    vtkNew<vtkTextActor> text;
+    text->SetInput(buttonName.c_str());
+    text->SetDisplayPosition(bds[0] + sz / 2, bds[2] + sz / 4);
+    text->GetTextProperty()->SetJustificationToCentered();
+    text->GetTextProperty()->SetVerticalJustificationToTop();
+    text->GetTextProperty()->SetFontSize(16);
+    text->GetTextProperty()->SetColor(colors->GetColor3d("White").GetData());
+    text->GetTextProperty()->SetShadow(true);
+    renderer->AddActor(text);
+
+    buttons.push_back(buttonWidget);
+
+    return buttonWidget;
+}
+
 void Application::CreateButtons()
 {
-    //vtkNew<vtkCoordinate> coordinate;
-    //coordinate->SetCoordinateSystemToNormalizedDisplay();
-    //coordinate->SetValue(.92, .26);
+    vtkNew<vtkCallbackCommand> quadElemsCallback;
+    quadElemsCallback->SetCallback(ChangeQuadElemsCallback);
+    vtkNew<vtkCallbackCommand> clippingCallback;
+    clippingCallback->SetCallback(ChangeClippingCallback);
 
-    //double bds[6];
-    //double sz = 100.0;
-    //bds[0] = coordinate->GetComputedDisplayValue(renderer)[0] - sz;
-    //bds[1] = bds[0] + sz;
-    //bds[2] = coordinate->GetComputedDisplayValue(renderer)[1] - sz;
-    //bds[3] = bds[2] + sz;
-    //bds[4] = bds[5] = 0.0;
+    auto clippingButton = CreateButton(.92, .26, "Clipping");
+    auto quadElemsButton = CreateButton(.92, .36, "Quad Elems");
 
-    //vtkSP<vtkImageData> red = CreateImage(255, 0, 0);
-    //vtkSP<vtkImageData> green = CreateImage(0, 255, 0);
+    clippingCallback->SetClientData(new AppWithButton(this, quadElemsButton));
+    quadElemsCallback->SetClientData(new AppWithButton(this, clippingButton));
 
-    //vtkNew<vtkTexturedButtonRepresentation2D> clippingBR;
-    //clippingBR->SetNumberOfStates(2);
-    //clippingBR->SetButtonTexture(0, red);
-    //clippingBR->SetButtonTexture(1, green);
-    //clippingBR->PlaceWidget(bds);
+    clippingButton->AddObserver(vtkCommand::StateChangedEvent, clippingCallback);
+    quadElemsButton->AddObserver(vtkCommand::StateChangedEvent, quadElemsCallback);
+    
+    vtkNew<vtkCallbackCommand> gridCallback;
+    gridCallback->SetCallback(ChangeGridCallback);
+    gridCallback->SetClientData(this);
 
-    //vtkNew<ChangeClippingButtonCallback> clippingCb;
-    //clippingCb->clippingPlaneWidget = clippingPlaneWidget;
-    //clippingCb->mainActors = mainActors;
-    //clippingCb->clippingActors = clippingActors;
+    auto gridButton = CreateButton(.82, .26, "Grid");
+    gridButton->AddObserver(vtkCommand::StateChangedEvent, gridCallback);
 
-    //changeClippingButton = vtkButtonWidget::New();
-    //changeClippingButton->SetInteractor(renderWindowInteractor);
-    //changeClippingButton->SetRepresentation(clippingBR);
-    //changeClippingButton->AddObserver(vtkCommand::StateChangedEvent, clippingCb);
-    //changeClippingButton->EnabledOn();
+    vtkNew<vtkCallbackCommand> outlineCallback;
+    outlineCallback->SetCallback(ChangeOutlineCallback);
+    outlineCallback->SetClientData(this);
 
+    auto outlineButton = CreateButton(.72, .26, "Outline");
+    outlineButton->AddObserver(vtkCommand::StateChangedEvent, outlineCallback);
+
+    vtkNew<vtkCallbackCommand> proportionsCallback;
+    proportionsCallback->SetCallback(ChangeProportionsCallback);
+    proportionsCallback->SetClientData(this);
+
+    auto proportionsButton = CreateButton(.62, .26, "Proportions");
+    proportionsButton->AddObserver(vtkCommand::StateChangedEvent, proportionsCallback);
+
+    vtkNew<vtkCallbackCommand> projectionCallback;
+    projectionCallback->SetCallback(ChangeProjectionCallback);
+    projectionCallback->SetClientData(this);
+
+    auto projectionButton = CreateButton(.52, .26, "Parallel Projection");
+    projectionButton->AddObserver(vtkCommand::StateChangedEvent, projectionCallback);
 }
 
 void EndRenderCallback(vtkObject* caller, long unsigned int eventId, void* clientData, void* callData)

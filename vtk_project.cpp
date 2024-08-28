@@ -63,18 +63,18 @@ int main(int argc, char* argv[])
     if (argc < 2)
     {
         vtkSP<vtkPolyData> standartObject = CreateStandartObject();
-        app.AddObject(standartObject, false, true, true);
+        app.AddObject(standartObject);
     }
     else if (is(argv[1], "with_scalars"))
     {
         vtkSP<vtkPolyData> standartObject = CreateStandartObject();
         vtkSP<vtkDoubleArray> scalars = GetScalars(standartObject->GetNumberOfPoints());
         standartObject->GetPointData()->SetScalars(scalars);
-        app.AddObject(standartObject, true, true, true);
+        app.AddObject(standartObject, true);
     }
     else
     {
-        app.AddObject(argv[1], true, true, true);
+        app.AddObject(argv[1]);
     }
 
     app.Start();

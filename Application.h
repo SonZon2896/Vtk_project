@@ -30,7 +30,7 @@ private:
 	vtkSP<vtkPlane> clipPlane;
 
 	vtkSP<vtkSliderWidget> changeVisionSliderWidget;
-	vtkSP<vtkButtonWidget> changeClippingButton;
+	std::vector<vtkSP<vtkButtonWidget>> buttons;
 	vtkSP<vtkTextMapper> fpsTextMapper;
 	vtkSP<vtkActor2D> fpsTextActor;
 
@@ -45,6 +45,8 @@ private:
 	void CreateOutline(vtkSP<vtkPolyData> source);
 	void CreateProportions(vtkSP<vtkActor> actor);
 
+	vtkSP<vtkButtonWidget> CreateButton(double x, double y, std::string buttonName = "");
+
 	void CreateSliders();
 	void CreateButtons();
 	void CreateFPSCounter();
@@ -53,8 +55,8 @@ public:
 	Application();
 
 	void AddSettings(std::string path_to_settings);
-	void AddObject(std::string path_to_file, bool enableIsolines = false, bool enableGrid = false, bool enableProportions = false);
-	void AddObject(vtkSP<vtkPolyData> source, bool enableIsolines = false, bool enableGrid = false, bool enableProportions = false);
+	void AddObject(std::string path_to_file);
+	void AddObject(vtkSP<vtkPolyData> source, bool enableScalars = false);
 	void AddQuadraticTriangles(std::vector<vtkSP<vtkUnstructuredGrid>> grids);
 
 	void Start();
@@ -92,7 +94,7 @@ public:
 	void ShowQuadricOn() { ShowQuadric(true); }
 	void ShowQuadricOff() { ShowQuadric(false); }
 
-	void ChangeProjection(unsigned int mode);
+	void ChangeProjection(bool mode);
 	void ChangeProjectionToParallel() { ChangeProjection(0); }
 	void ChangeProjectionToPerspective() { ChangeProjection(1); }
 
