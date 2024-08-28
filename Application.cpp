@@ -101,11 +101,9 @@ void Application::AddObject(std::string fileName)
         importer->fileName = fileName;
         importer->Update();
 
-        vtkNew<vtkPolyData> polyData;
-        polyData->SetPoints(importer->GetPoints());
-        polyData->SetPolys(importer->GetPolys());
+        auto polyData = importer->GetPolyData();
 
-        AddObject(polyData);
+        AddObject(polyData, importer->IsScalars());
         if (importer->IsQuadTriangles())
             AddQuadraticTriangles(importer->GetQuadTriangles());
         std::cout << "File readed" << std::endl;
@@ -451,6 +449,7 @@ void Application::CreateClipping(vtkSP<vtkPolyData> source)
 
     vtkNew<vtkPolyDataMapper> clippingMapper;
     clippingMapper->SetInputConnection(clipper->GetOutputPort());
+    clippingMapper->ScalarVisibilityOff();
 
     vtkNew<vtkProperty> backFaces;
     backFaces->SetSpecular(0.0);
@@ -460,7 +459,6 @@ void Application::CreateClipping(vtkSP<vtkPolyData> source)
 
     vtkNew<vtkActor> clippingActor;
     clippingActor->SetMapper(clippingMapper);
-    clippingActor->VisibilityOff();
     clippingActor->SetBackfaceProperty(backFaces);
     clippingActor->GetProperty()->SetColor(colors->GetColor3d("Silver").GetData());
 

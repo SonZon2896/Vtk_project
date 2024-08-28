@@ -89,6 +89,7 @@ void AddLine(std::string str, int mode_number, vtkCellArray* cellArray)
 
 enum Mode {
 	nodes = 1,
+	nodes_values,
 	tetrahedrons,
 	triangles,
 	plane_triangles,
@@ -104,7 +105,6 @@ void CSV3DImporter::Update()
 	std::string fileString;
 	if (file.is_open())
 	{
-		vtkNew<vtkPoints> pointsTemp;
 		vtkNew<vtkPoints> quadPointsTemp;
 		std::vector<vtkSP<vtkIdList>> quadPolysTemp;
 		vtkNew<vtkCellArray> vertsTemp;
@@ -147,14 +147,15 @@ void CSV3DImporter::Update()
 				}
 				continue;
 			}
-			double *point;
-			vtkSmartPointer<vtkIdList> idList;
+
 			switch (mode)
 			{
 			case nodes:
-				if (fileString[0] < '0' || fileString[0] > '9')
-					break;
-				AddPoint(fileString, pointsTemp);
+				AddNodesTitles(fileString);
+				mode = nodes_values;
+				break;
+			case nodes_values:
+				AddNodesValues(fileString);
 				break;
 			case tetrahedrons:
 				//AddPolygon(fileString, polysTemp);
@@ -181,7 +182,7 @@ void CSV3DImporter::Update()
 			if (file.eof())
 				break;
 		}
-		points = pointsTemp;
+
 		quadPoints = quadPointsTemp;
 		quadPolys = quadPolysTemp;
 		verts = vertsTemp;
@@ -190,7 +191,114 @@ void CSV3DImporter::Update()
 	}
 	file.close();
 
+	CreatePoints();
+	CreateScalars();
+	CreatePolyData();
+
 	std::cout << "Reading end" << std::endl;
+}
+
+void CSV3DImporter::AddNodesTitles(std::string input)
+{
+	std::string temp;
+	for (auto ch : input)
+	{
+		if (ch != ';')
+			temp += ch;
+		else
+		{
+			nodesTitles.push_back(temp);
+			temp = "";
+		}
+	}
+	if (temp != "")
+		nodesTitles.push_back(temp);
+	return;
+}
+
+void CSV3DImporter::AddNodesValues(std::string input)
+{
+	std::vector<double> tempVector;
+	std::string temp;
+	for (auto ch : input)
+	{
+		if (ch != ';')
+			temp += ch;
+		else
+		{
+			tempVector.push_back(std::stod(temp));
+			temp = "";
+		}
+	}
+	if (temp != "")
+		tempVector.push_back(std::stod(temp));
+	nodesValues.push_back(tempVector);
+}
+
+int CSV3DImporter::CreatePoints()
+{
+	int xId = -1;
+	int yId = -1;
+	int zId = -1;
+	for (int i = 0; i < nodesTitles.size(); ++i)
+	{
+		if (nodesTitles[i] == "x")
+			xId = i;
+		else if (nodesTitles[i] == "y")
+			yId = i;
+		else if (nodesTitles[i] == "z")
+			zId = i;
+	}
+
+	if (xId == -1 || yId == -1 || zId == -1)
+	{
+		std::cerr << "CSV3DImporter error: coordinates not found" << std::endl;
+		return -1;
+	}
+
+	points = vtkPoints::New();
+
+	for (auto values : nodesValues)
+		points->InsertNextPoint(values[xId], values[yId], values[zId]);
+
+	points->Print(std::cout);
+
+	return 0;
+}
+
+void CSV3DImporter::CreateScalars()
+{
+	int TId = -1;
+	for (int i = 0; i < nodesTitles.size(); ++i)
+	{
+		if (nodesTitles[i] == "T")
+			TId = i;
+	}
+	if (TId == -1)
+		return;
+
+	isScalars = true;
+	scalars = vtkDoubleArray::New();
+
+	for (auto values : nodesValues)
+		scalars->InsertNextTuple1(values[TId]);
+
+	scalars->Print(std::cout);
+}
+
+void CSV3DImporter::CreatePolyData()
+{
+	if (points == nullptr)
+		return;
+
+	polyData = vtkPolyData::New();
+	polyData->SetPoints(points);
+	polyData->SetPolys(polys);
+	
+	if (IsScalars())
+		polyData->GetPointData()->SetScalars(scalars);
+
+	polyData->Print(std::cout);
 }
 
 std::vector<vtkSP<vtkUnstructuredGrid>> CSV3DImporter::CreateQuadTriangles()

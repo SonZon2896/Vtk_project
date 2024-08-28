@@ -18,7 +18,21 @@ private:
 	vtkSP<vtkCellArray> lines;
 	vtkSP<vtkCellArray> polys;
 
+	vtkSP<vtkPolyData> polyData;
+
+	vtkSP<vtkDoubleArray> scalars;
+
+	std::vector<std::string> nodesTitles;
+	std::vector<std::vector<double>> nodesValues;
+
 	bool isQuadTriangles = false;
+	bool isScalars = false;
+
+	void AddNodesTitles(std::string input);
+	void AddNodesValues(std::string input);
+	int CreatePoints();
+	void CreateScalars();
+	void CreatePolyData();
 
 	std::vector<vtkSP<vtkUnstructuredGrid>> CreateQuadTriangles();
 public:
@@ -28,10 +42,9 @@ public:
 	vtkTypeMacro(CSV3DImporter, vtkImporter);
 
 	void Update();
-	vtkPoints* GetPoints() { return points; }
+
+	auto GetPolyData() { return polyData; }
 	auto GetQuadTriangles() { return CreateQuadTriangles(); }
 	bool IsQuadTriangles() { return isQuadTriangles; }
-	vtkCellArray* GetVerts() { return verts; }
-	vtkCellArray* GetLines() { return lines; }
-	vtkCellArray* GetPolys() { return polys; }
+	bool IsScalars() { return isScalars; }
 };
