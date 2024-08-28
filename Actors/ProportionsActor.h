@@ -10,12 +10,15 @@ private:
 	vtkSP<vtkActor> inputActor;
 	std::vector<vtkSP<ProportionsPieceActor>> proportionsPieceActors;
 
+	vtkSP<vtkCamera> camera;
+
 	void UpdateProps();
 
 public:
 	static ProportionsActor* New() { return new ProportionsActor(); }
 	
 	void SetActor(vtkActor* actor) { inputActor = actor; UpdateProps(); }
+	void SetCamera(vtkCamera* camera) { this->camera = camera; UpdateProps(); }
 
 	double* GetBounds() override;
 	void GetActors(vtkPropCollection* props) override;

@@ -589,6 +589,7 @@ void Application::CreateProportions(vtkSP<vtkActor> actor)
 
     vtkNew<ProportionsActor> proportionsActor;
     proportionsActor->SetActor(actor);
+    proportionsActor->SetCamera(renderer->GetActiveCamera());
     renderer->AddActor(proportionsActor);
 
     propotionsActors.push_back(proportionsActor);

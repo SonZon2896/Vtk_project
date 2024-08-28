@@ -14,32 +14,36 @@ void ProportionsActor::UpdateProps()
 	double* bounds = inputActor->GetBounds();
 	double* pos = inputActor->GetCenter();
 
-	//proportionsPieceActors[0]->SetPosition(pos[0], bounds[3], pos[2]);
-	//proportionsPieceActors[0]->SetLength((bounds[3] - bounds[2]) / 2);
 	proportionsPieceActors[0]->SetPosition(pos[0], pos[1], pos[2]);
 	proportionsPieceActors[0]->SetLength((bounds[3] - bounds[2]) / 2 + bounds[3] - pos[1]);
 	proportionsPieceActors[0]->SetWidth(bounds[1] - bounds[0]);
 
-	//proportionsPieceActors[1]->SetPosition(bounds[0], pos[1], pos[2]);
 	proportionsPieceActors[1]->SetPosition(pos[0], pos[1], pos[2]);
 	proportionsPieceActors[1]->SetOrientation(0., 90., 90.);
-	//proportionsPieceActors[1]->SetLength((bounds[1] - bounds[0]) / 2);
 	proportionsPieceActors[1]->SetLength((bounds[1] - bounds[0]) / 2 + bounds[1] - pos[0]);
 	proportionsPieceActors[1]->SetWidth(bounds[5] - bounds[4]);
 
-	//proportionsPieceActors[2]->SetPosition(pos[0], pos[1], bounds[5]);
 	proportionsPieceActors[2]->SetPosition(pos[0], pos[1], pos[2]);
 	proportionsPieceActors[2]->SetOrientation(90., 0., 90.);
-	//proportionsPieceActors[2]->SetLength((bounds[5] - bounds[4]) / 2);
 	proportionsPieceActors[2]->SetLength((bounds[5] - bounds[4]) / 2 + bounds[5] - pos[2]);
 	proportionsPieceActors[2]->SetWidth(bounds[3] - bounds[2]);
 
+	double range;
 	double minRange = bounds[1] - bounds[0];
 	for (int i = 1; i < 3; ++i)
 		minRange = std::min(minRange, bounds[i * 2 + 1] - bounds[i * 2]);
-
+	minRange /= 20;
 	for (auto proportionsPieceActor : proportionsPieceActors)
-		proportionsPieceActor->SetRadius(minRange / 300.);
+	{
+		if (camera != nullptr)
+		{
+			range = vtkMath::Distance2BetweenPoints(proportionsPieceActor->GetCenter(), camera->GetPosition());
+			range = std::min(minRange, range / 700);
+		}
+		else
+			range = minRange;
+		proportionsPieceActor->SetRadius(range);
+	}
 }
 
 double* ProportionsActor::GetBounds()

@@ -2,6 +2,8 @@
 
 ProportionsPieceActor::ProportionsPieceActor()
 {
+	vtkNew<vtkNamedColors> colors;
+
 	cylinderLengthSource = vtkCylinderSource::New();
 	cylinderWidthSource = vtkCylinderSource::New();
 	coneSource = vtkConeSource::New();
@@ -24,31 +26,36 @@ ProportionsPieceActor::ProportionsPieceActor()
 	vtkNew<vtkPolyDataMapper> leftLineMapper;
 	leftLineMapper->SetInputConnection(cylinderLengthSource->GetOutputPort());
 	leftLine->SetMapper(leftLineMapper);
-	leftLine->GetProperty()->SetColor(1., 0., 0.);
+	//leftLine->GetProperty()->SetColor(1., 0., 0.);
+	leftLine->GetProperty()->SetColor(colors->GetColor3d("DarkBlue").GetData());
 
 	vtkNew<vtkPolyDataMapper> rightLineMapper;
 	rightLineMapper->SetInputConnection(cylinderLengthSource->GetOutputPort());
 	rightLine->SetMapper(rightLineMapper);
-	rightLine->GetProperty()->SetColor(0., 0., 1.);
+	//rightLine->GetProperty()->SetColor(0., 0., 1.);
+	rightLine->GetProperty()->SetColor(colors->GetColor3d("DarkBlue").GetData());
 
 	vtkNew<vtkPolyDataMapper> centerLineMapper;
 	centerLineMapper->SetInputConnection(cylinderWidthSource->GetOutputPort());
 	centerLine->SetMapper(centerLineMapper);
-	centerLine->GetProperty()->SetColor(0., 1., 0.);
+	//centerLine->GetProperty()->SetColor(0., 1., 0.);
+	centerLine->GetProperty()->SetColor(colors->GetColor3d("DarkBlue").GetData());
 
 	vtkNew<vtkPolyDataMapper> leftConeMapper;
 	leftConeMapper->SetInputConnection(coneSource->GetOutputPort());
 	leftCone->SetMapper(leftConeMapper);
-	leftCone->GetProperty()->SetColor(1., 0., 0.);
+	//leftCone->GetProperty()->SetColor(1., 0., 0.);
+	leftCone->GetProperty()->SetColor(colors->GetColor3d("DarkBlue").GetData());
 
 	vtkNew<vtkPolyDataMapper> rightConeMapper;
 	rightConeMapper->SetInputConnection(coneSource->GetOutputPort());
 	rightCone->SetMapper(rightConeMapper);
-	rightCone->GetProperty()->SetColor(0., 0., 1.);
+	//rightCone->GetProperty()->SetColor(0., 0., 1.);
+	rightCone->GetProperty()->SetColor(colors->GetColor3d("DarkBlue").GetData());
 
-	//proportionLabel->ThreeDimensionalLeaderOff();
-	//proportionLabel->LeaderOff();
-	//proportionLabel->BorderOff();
+	proportionLabel->ThreeDimensionalLeaderOff();
+	proportionLabel->LeaderOff();
+	proportionLabel->BorderOff();
 
 	position = new double[3] {0., 0., 0.};
 	orientation = new double[3] { 0., 0., 0.};
